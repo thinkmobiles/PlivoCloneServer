@@ -420,7 +420,7 @@ var Message = function ( db, app ) {
                 }
             },
             {
-                $sort: { postedDate:-1 }
+                $sort: { postedDate: -1 }
             },
             {
                 $project: {
@@ -441,6 +441,9 @@ var Message = function ( db, app ) {
                 }
             },
             {
+                $sort: { "lastmessage.postedDate": -1 }
+            },
+            {
                 $skip: skip
             },
             {
@@ -455,7 +458,7 @@ var Message = function ( db, app ) {
             res.status( 200 ).send( docs );
         })
 
-    }
+    };
 
     this.getRecent = function ( req, res, next) {
         var userId = req.session.uId;
