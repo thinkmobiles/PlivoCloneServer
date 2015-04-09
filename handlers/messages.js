@@ -456,6 +456,58 @@ var Message = function ( db, app ) {
         })
 
     }
+
+    this.getRecent = function ( req, res, next) {
+        var userId = req.session.uId;
+        var limit = parseInt(req.query.l) || 20;
+        var page = parseInt(req.query.p) || 1;
+        var skip = (page -1) * limit;
+
+        Conversation.aggregate([
+            {
+                $match:{
+                    $or:[
+                        {"owner._id": userId }
+                    ]
+                }
+            },
+            {
+                $sort: { postedDate:-1 }
+            },
+            {
+                $project: {
+                    "_id": 0,
+                    body: 1,
+                    chat: 1,
+                    owner: 1,
+                    companion: 1,
+                    postedDate: 1
+                }
+            },
+            {
+                $group:{
+                    _id: "$companion._id",
+                    lastmessage: {
+                        $first:"$$ROOT"
+                    }
+                }
+            },
+            {
+                $skip: skip
+            },
+            {
+                $limit: limit
+            }
+        ], function ( err, docs ) {
+
+            if ( err ) {
+                return next( err );
+            }
+
+            res.status( 200 ).send( docs );
+        })
+
+    }
 };
 
 module.exports = Message;
