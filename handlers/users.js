@@ -350,8 +350,10 @@ var User = function ( db ) {
     };
 
     this.getAvatar = function (req, res, next){
+        var userId = req.session.uId;
         var companion = req.params.companion;
         var queryObj = {
+            refUser: newObjectId( userId ),
             companion: companion
             };
         var projObj = {
