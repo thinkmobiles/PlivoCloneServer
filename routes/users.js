@@ -11,6 +11,9 @@ module.exports = function (db) {
     router.delete( '/addressbook/:companion', session.authenticatedUser, users.deleteAddressBookEntry );
     router.post( '/addressbook', session.authenticatedUser, users.addAddresbookEntry );
     router.get( '/addressbook', session.authenticatedUser, users.getAddressBook );
+
+    router.get('/addressbook/:companion', session.authenticatedUser, users.getAvatar);
+
     router.put( '/addressbook/:companion', session.authenticatedUser, users.updateAddresbookEntry );
 
     router.put( '/:id', session.authenticatedUser, users.updateAccount );

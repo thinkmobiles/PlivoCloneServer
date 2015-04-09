@@ -8,4 +8,5 @@ module.exports = function(db){
     require('./conversation')(db);
     require('./socketConnection')(db);
     require('./addressBook')(db);
+    require('./countries')(db);
 };

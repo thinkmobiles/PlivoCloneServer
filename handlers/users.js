@@ -315,6 +315,7 @@ var User = function ( db ) {
         var limit = req.query.l || 20;
         var page = req.query.p || 1;
         var filter = req.query.q;
+
         var sortObj = {
             companion: desc
         };
@@ -325,7 +326,8 @@ var User = function ( db ) {
             "_id": 0,
             refUser: 0,
             "__v": 0,
-            "numbers._id": 0
+            "numbers._id": 0,
+            'avatar': 0
         };
 
         if ( req.query.q ) {
@@ -336,14 +338,36 @@ var User = function ( db ) {
         AddressBook
             .find( queryObj, projObj )
             .sort( sortObj )
-            .skip( page > 0 ? ( page -1 )* limit : 0)
+            .skip( page > 0 ? ( page - 1 )* limit : 0)
             .limit( limit )
             .exec( function ( err, entries ) {
                 if ( err ) {
                     return next( err );
                 }
-
                 return res.status( 200 ).json( entries )
+            });
+
+    };
+
+    this.getAvatar = function (req, res, next){
+        var companion = req.params.companion;
+        var queryObj = {
+            companion: companion
+            };
+        var projObj = {
+            "_id": 0,
+            refUser: 0,
+            "__v": 0,
+            "numbers": 0
+        }
+
+        AddressBook
+            .find(queryObj, projObj)
+            .exec(function(err, entries){
+                if (err){
+                    return next(err);
+                }
+                return res.status(200).json(entries)
             });
 
     };
