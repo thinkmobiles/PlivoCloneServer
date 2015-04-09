@@ -8,8 +8,10 @@ module.exports = function(app, db) {
     var users = require( './users' )(db);
     var UserHandler = require('../handlers/users');
     var SessionHandler = require('../handlers/sessions');
+    var CountriesPriceHandler = require('../handlers/price');
     var session = new SessionHandler(db);
     var user = new UserHandler(db);
+    var price = new CountriesPriceHandler(db);
 
     app.get( '/', function ( req, res, next ) {
         res.status(200 ).send( 'Express start succeed' );
@@ -18,13 +20,14 @@ module.exports = function(app, db) {
     app.post( '/signIn', user.signIn);
     app.post( '/signUp', user.signUp);
     app.get( '/signOut', user.signOut);
+    app.get('/price', price.getCountriesPrice);
 
     app.use( '/call', calls );
     app.use( '/message', messages );
     app.use( '/endpoint', endpoints );
     app.use( '/number', numbers );
     app.use( '/user', users );
-    app.use( '/addressbook', addressbook );
+   // app.use( '/addressbook', addressbook );
 
     function notFound(req, res, next){
         next();
