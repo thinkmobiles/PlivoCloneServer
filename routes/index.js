@@ -27,7 +27,7 @@ module.exports = function(app, db) {
     app.use( '/number', numbers );
     app.use( '/user', users );
    // app.use( '/addressbook', addressbook );
-    //app.use( '/addressbook', addressbook );
+
 
     function notFound(req, res, next){
         next();
