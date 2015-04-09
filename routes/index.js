@@ -20,7 +20,6 @@ module.exports = function(app, db) {
     app.post( '/signIn', user.signIn);
     app.post( '/signUp', user.signUp);
     app.get( '/signOut', user.signOut);
-    app.get('/price', price.getCountriesPrice);
 
     app.use( '/call', calls );
     app.use( '/message', messages );
@@ -28,6 +27,7 @@ module.exports = function(app, db) {
     app.use( '/number', numbers );
     app.use( '/user', users );
    // app.use( '/addressbook', addressbook );
+    //app.use( '/addressbook', addressbook );
 
     function notFound(req, res, next){
         next();

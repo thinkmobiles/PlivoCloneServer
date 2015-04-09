@@ -12,12 +12,14 @@ module.exports = function(db, app) {
 
     router.post( '/send', session.authenticatedUser, messages.sendMessage );
     router.get( '/get/:message_uuid', session.authenticatedUser, messages.messageInfo );
-    router.get( '/lastConversations', session.authenticatedUser, messages.getLastConversations );
+    //router.get( '/lastConversations', session.authenticatedUser, messages.getLastConversations );
     router.get( '/conversations/:src/:dst', session.authenticatedUser, messages.getConversations );
     //router.get( '/conversations', session.authenticatedUser, messages.getConversations );
     router.post( '/received', session.authenticatedUser, messages.postMessage );
 
     router.get( '/lastchats', session.authenticatedUser, messages.getLastByChats );
+    router.get( '/recent', session.authenticatedUser, messages.getRecent );
+
 
     return router;
 };

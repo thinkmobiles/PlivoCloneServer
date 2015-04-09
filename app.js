@@ -7,6 +7,16 @@ var mongoose = require( 'mongoose' );
 var app = express();
 var sockets = require( 'socket.io' );
 
+
+app.use( function(req, res, next) {
+    var browser = req.headers['user-agent'];
+    console.log('---------------------------------');
+    console.log(browser);
+    if (/Trident|NativeHost/.test(browser)) {
+        res.header('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
+    }
+    next();
+}) ;
 app.use( logger( 'dev' ) );
 app.use( bodyParser.json({strict: false, limit: 1024 * 1024 * 200}) );
 app.use( bodyParser.urlencoded( { extended: false } ) );

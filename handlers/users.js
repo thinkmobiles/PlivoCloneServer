@@ -596,7 +596,7 @@ var User = function ( db ) {
                     if ( err ) {
                         return callback( err );
                     }
-                    callback;
+                    callback(null);
                 });
         }
 
