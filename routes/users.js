@@ -19,6 +19,7 @@ module.exports = function (db) {
     router.post( '/changepass', session.authenticatedUser, users.changePassword );
 
     router.post( '/addressbook/numbers', session.authenticatedUser, users.addNumberToContact );
+    router.put( '/numbers/block', session.authenticatedUser, users.blockNumbers );
 
     return router;
 };
