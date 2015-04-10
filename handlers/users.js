@@ -575,6 +575,13 @@ var User = function ( db ) {
                 if ( err ) {
                     return callback( err );
                 }
+                if ( ! result[0] ) {
+                    result = [
+                        {
+                            numbers:[]
+                        }
+                    ];
+                }
                 callback( null, result[0].numbers );
             })
     }
