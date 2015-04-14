@@ -510,6 +510,52 @@ var Message = function ( db, app ) {
             res.status( 200 ).send( docs );
         })
 
+    };
+
+    this.getRecent2 = function ( req, res, next) {
+        var userId = req.session.uId;
+        var limit = parseInt(req.query.l) || 20;
+        var page = parseInt(req.query.p) || 1;
+        var skip = (page -1) * limit;
+
+        AddressBook.find(
+            {
+                $or:[
+                    {
+                        "owner._id": userId
+                    },
+                    {
+                        "companion._id": userId
+                    }
+                ]
+            },
+            {
+                companion: 1,
+                "numbers.number": 1
+            }
+        ).exec(
+            function ( err, contacts ) {
+                var length;
+                var contactIndex;
+                var con
+                var recents = [];
+
+                if ( err ) {
+                    return next(err);
+                }
+
+                length = contacts.length;
+                async.each(
+                    contacts,
+                    function ( err, callback ) {
+                        if ( err ) {
+                            callback( err); //todo
+                        }
+                    }
+                );
+            }
+        );
+
     }
 };
 

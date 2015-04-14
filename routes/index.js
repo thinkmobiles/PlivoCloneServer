@@ -6,12 +6,12 @@ module.exports = function(app, db) {
     var endpoints = require( './endpoints' )(db);
     var numbers = require( './numbers' )(db);
     var users = require( './users' )(db);
+    var prices = require('./prices')(db);
     var UserHandler = require('../handlers/users');
     var SessionHandler = require('../handlers/sessions');
     var CountriesPriceHandler = require('../handlers/price');
     var session = new SessionHandler(db);
     var user = new UserHandler(db);
-    var price = new CountriesPriceHandler(db);
 
     app.get( '/', function ( req, res, next ) {
         res.status(200 ).send( 'Express start succeed' );
@@ -26,6 +26,7 @@ module.exports = function(app, db) {
     app.use( '/endpoint', endpoints );
     app.use( '/number', numbers );
     app.use( '/user', users );
+    app.use( '/price', prices );
    // app.use( '/addressbook', addressbook );
 
 
