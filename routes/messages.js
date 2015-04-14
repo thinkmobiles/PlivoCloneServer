@@ -18,7 +18,7 @@ module.exports = function(db, app) {
     router.post( '/received', session.authenticatedUser, messages.postMessage );
 
     router.get( '/lastchats', session.authenticatedUser, messages.getLastByChats );
-    router.get( '/recent', session.authenticatedUser, messages.getRecent );
+    router.get( '/recent', session.authenticatedUser, messages.getRecentCompanion );
 
 
     return router;
