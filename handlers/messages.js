@@ -557,6 +557,72 @@ var Message = function ( db, app ) {
         );
 
     }
+
+    this.getRecentCompanion = function (req, res, next){
+        var userId = req.session.uId;
+        var addressBookEntries;
+        var numbers;
+        var recent = [];
+        var sortedRecent;
+        var lastRecent;
+        var sortObj = {
+            'postedDate': -1
+        };
+
+        AddressBook.find({refUser : newObjectId( userId )})
+            .exec(function(err, entries){
+                if (err){
+                    next(err);
+                }
+                addressBookEntries = entries;
+
+                async.each(addressBookEntries, function(element, callback){
+                    numbers = lodash.pluck(element.numbers, 'number');
+                    Conversation.aggregate([
+                        {
+                            $match: {
+                                $and: [
+                                    {
+                                        $or: [
+                                            {"owner._id": userId},
+                                            {"companion._id": userId}
+                                        ]
+                                    },
+                                    {
+                                        $or: [
+                                            {"owner.number": {$in : numbers}},
+                                            {"companion.number": {$in : numbers}}
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            $sort: sortObj
+                        },
+                        {
+                            $limit: 1
+                        }
+                    ], function(err, doc){
+                        if (err){
+                            return callback(err)
+                        }
+                        if (doc.length){
+                            recent.push(doc[0]);
+                        }
+                        callback();
+                    });
+                }, function(err){
+                    if (err){
+                        return next(err);
+                    }
+                    sortedRecent = lodash.sortByOrder(recent, 'postedDate', false);
+                    lastRecent = sortedRecent.slice(0, 5);
+
+                    res.status(200).send(lastRecent);
+                });
+            });
+    };
 };
 
 module.exports = Message;
