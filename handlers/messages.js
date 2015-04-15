@@ -170,6 +170,7 @@ var Message = function ( db, app ) {
         var destSocket;
         var plivoParams;
         var chat;
+        var dstId = '123456789';
         var io = (app) ? app.get( 'io' ) : null;
         /*p.send_message( params, function ( status, response ) {
          console.log( 'Status: ', status );
@@ -260,15 +261,51 @@ var Message = function ( db, app ) {
                         });
                     } else {
                         if (params.src && params.dst && params.text) {
+                            conversation = new Conversation();
+                            if (params.src > params.dst){
+                                chat = params.dst + ':' + params.src;
+                            } else {
+                                chat = params.src + ':' + params.dst;
+                            }
+                            conversation.chat = chat;
+                            conversation.owner = {
+                                _id: userId,
+                                name: {
+                                    first: userObject.name.first,
+                                    last: userObject.name.last
+                                },
+                                number: params.src
+                            };
+
+                            // TODO conversation.companion _id
+
+                            conversation.companion = {
+                                _id: dstId,
+                                name: {
+                                    first: "Anonymous",
+                                    last: "Anonymous"
+                                },
+                                number: params.dst
+                            };
+                            conversation.body = body;
+
                             plivoParams = {
                                 src: params.src,
                                 dst: params.dst,
                                 text: params.text,
                                 type: "sms"
                             };
+
                             p.send_message( params, function ( status, response ) {
-                                res.status( 200 ).send( response );
-                            } );
+                                conversation.save(function(err, saveResponse){
+                                    if (err){
+                                        next(err);
+                                    } else {
+                                        res.status( 200 ).send( response );
+                                    }
+                                });
+                            });
+
                         } else {
                             err = new Error('Bad request');
                             err.status = 400;
@@ -278,8 +315,6 @@ var Message = function ( db, app ) {
                 } );
             }
         } );
-
-
     };
 
     this.messageInfo = function ( req, res, next ) {
