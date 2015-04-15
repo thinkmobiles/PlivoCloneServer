@@ -14,6 +14,7 @@ var Number = function (db) {
     this.serchNumbers = function ( req, res, next ) {
         var countryIso = req.params.countryIso;
         countryIso = countryIso || 'US';
+        countryIso = countryIso.toUpperCase();
         var params = {
             //type: 'mobile',
             services: 'sms',
