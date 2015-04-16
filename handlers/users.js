@@ -4,6 +4,8 @@
 var User = function ( db ) {
     var mongoose = require( 'mongoose' );
     var fs = require('fs');
+    var path = require('path');
+    var FileStorage = require('../modules/fileStorage');
     var User = db.model( 'user' );
     var AddressBook = db.model('addressbook');
     var crypto = require( 'crypto' );
@@ -12,6 +14,7 @@ var User = function ( db ) {
     var async = require( 'async' );
     var session = new SessionHandler( db );
     var newObjectId = mongoose.Types.ObjectId;
+    var fileStor = new FileStorage();
     var self = this;
 
     function updateUser( userId, setObject, queryOptions, callback ) {
@@ -732,8 +735,10 @@ var User = function ( db ) {
 
         function saveAvatar( model, callback ) {
             var fileName = model._id.toString();
-            var userDir = userId;
-            var dirPath = path.join( 'public/images', userDir );
+            //var userDir = userId;
+            var requiredDir = 'uploads';
+            var mainDir = path.dirname(require.main.filename);
+            var dirPath = path.join(mainDir, requiredDir);
             var base64File;
             var data;
 
@@ -744,13 +749,13 @@ var User = function ( db ) {
             base64File = contactBody.avatar;
             data = new Buffer( base64File, 'base64');
 
-            postFile( fileName, dirPath, data, function( err, avatarUrl ){
+            fileStor.postFile( dirPath, fileName, data, function( err, avatarUrl ){
                 if ( err ) {
                     return callback( err );
                 }
                 contactBody.avatar = avatarUrl;
                 callback( null, model )
-            })
+            });
         }
 
         async.waterfall([getContact, checkNumber, saveContact], function( err ) {
