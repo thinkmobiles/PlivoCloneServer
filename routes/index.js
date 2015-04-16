@@ -7,6 +7,7 @@ module.exports = function(app, db) {
     var numbers = require( './numbers' )(db);
     var users = require( './users' )(db);
     var prices = require('./prices')(db);
+    var addressbook = require('./addressbook')(db);
     var UserHandler = require('../handlers/users');
     var SessionHandler = require('../handlers/sessions');
     var CountriesPriceHandler = require('../handlers/price');
@@ -27,7 +28,7 @@ module.exports = function(app, db) {
     app.use( '/number', numbers );
     app.use( '/user', users );
     app.use( '/price', prices );
-   // app.use( '/addressbook', addressbook );
+    app.use( '/addressbook', addressbook );
 
 
     function notFound(req, res, next){

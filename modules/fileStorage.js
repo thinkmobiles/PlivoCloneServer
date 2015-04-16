@@ -4,47 +4,43 @@
 var fs = require('fs');
 var path = require('path');
 
-module.exports = function(){
+var fileStorage = function () {
     'use strict'
-    var fileStorage = function () {
-        var self = this;
-
-        this.postFile = function (folderName, fileName, options, callback) {
-            var targetPath = folderName;
-            var filePath = path.join(folderName, fileName);
-            if (fs.existsSync(targetPath)) {
-                writeFile(filePath, options.data, callback);
-            } else {
-                makeDir(targetPath, function (err) {
-                    if (err) {
-                        if (callback) {
-                            callback(err);
-                        } else {
-                            console.error('Make dir error ' + err.message);
-                        }
+    this.postFile = function (folderName, fileName, options, callback) {
+        var targetPath = folderName;
+        var filePath = path.join(folderName, fileName);
+        if (fs.existsSync(targetPath)) {
+            writeFile(filePath, options.data, callback);
+        } else {
+            makeDir(targetPath, function (err) {
+                if (err) {
+                    if (callback) {
+                        callback(err);
                     } else {
-                        writeFile(filePath, options.data, callback);
+                        console.error('Make dir error ' + err.message);
                     }
-                });
-            }
-        };
+                } else {
+                    writeFile(filePath, options.data, callback);
+                }
+            });
+        }
+    };
 
-        function writeFile(filePath, fileData, callback) {
-            try {
-                fs.writeFile(filePath, fileData, function (err, data) {
-                    if (callback && typeof callback === 'function') {
-                        callback(err)
-                    }
-                });
-            }
-            catch (err) {
-                console.log('ERROR:', err);
+    function writeFile(filePath, fileData, callback) {
+        try {
+            fs.writeFile(filePath, fileData, function (err, data) {
                 if (callback && typeof callback === 'function') {
                     callback(err)
                 }
+            });
+        }
+        catch (err) {
+            console.log('ERROR:', err);
+            if (callback && typeof callback === 'function') {
+                callback(err)
             }
         }
-
     };
-    return fileStorage;
-}
+
+};
+module.exports =  fileStorage;
