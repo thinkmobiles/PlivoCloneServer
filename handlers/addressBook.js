@@ -553,20 +553,29 @@ var AddressBook = function(db) {
 
     }
 
-    this.updateMyContact = function (req, res, next) {
+    this.updateMyContact = function ( req, res, next) {
         var userId = req.session.uId;
         var contactName = req.params.companion;
         var contactBody = req.body;
+        var msg;
 
         updateContact(
             userId,
             contactName,
             contactBody,
-            function (err) {
-                if (err) {
-                    return res.status(500).send(err.message); //todo change status and error
+            function( err ) {
+                if ( err ) {
+                    if ( err.status === 409 ) {
+                        err.message = contactBody.numbers
+                    }
+                    return res.status( err.status || 500 ).send(err.message); //todo change status and error
                 }
-                res.status(200).send({success: 'contact updated'})
+                if ( contactBody.avatar ) {
+                    msg = {
+                        avatar: contactBody.avatar
+                    }
+                }
+                res.status(200).send( msg || {} );
             }
         );
 
