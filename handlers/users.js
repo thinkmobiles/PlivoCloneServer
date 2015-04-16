@@ -3,6 +3,7 @@
  */
 var User = function ( db ) {
     var mongoose = require( 'mongoose' );
+    var fs = require('fs');
     var User = db.model( 'user' );
     var AddressBook = db.model('addressbook');
     var crypto = require( 'crypto' );
@@ -391,6 +392,8 @@ var User = function ( db ) {
         };
         var updateObj = { $set: body };
 
+        var tasks = [];
+
 
         AddressBook.findOne( queryObj, projObj, function ( err, entry ) {
             if ( err ) {
@@ -401,7 +404,110 @@ var User = function ( db ) {
                 return res.status( 403 ).send( {success: companion + ' Nnot found'} );
             }
 
+            function numberIsOccupied ( callback ) {
+                getAllAddressBookNumber( userId, function( err, allNumbers ) {
+                    var existNumbers;
+
+                    if ( err ) {
+                        return callback( err );
+                    }
+                    existNumbers = lodash.intersection( allNumbers, numArr );
+
+                    if ( existNumbers.length ) {
+                        err = new Error('number exist');
+                        err.status = 409;
+                        return callback( err )
+                    }
+
+                    callback( null  );
+
+                });
+            }
+
+            function saveAddressBookAvatar( callback ) {
+
+                function writeToLocalStorage( name, base64Avatar, callback ) {
+                    var storagePath = path.join('../public/images' );
+                    var imgBuffer = new Buffer( base64Avatar, 'base64' );
+                    var dirName = path.join( storagePath, req.session.uId );
+                    var imgName = path.join(dirName, entry._id.toString());
+
+                    if ( fs.existsSync( storagePath ) ) {
+
+                        err = new Error('storage not found');
+                        err.status = 404;
+
+                        return callback( err );
+                    }
+
+                    fs.exists( dirName, function ( isExist ) {
+
+                        if ( !isExist ) {
+
+                            fs.mkdir( dirName, function ( err ) {
+
+                                if ( err ) {
+                                    return callback( err );
+                                }
+
+                                fs.writeFile( imgName, imgBuffer, function( err ) {
+                                    if (err) {
+                                        return next( err );
+                                    }
+                                    callback( null );
+                                })
+
+                            });
+                        }
+
+                        fs.writeFile(path.join(dirName, imgName) + '.jpg', imgBuffer, function(err){
+
+                            if (err){
+                                callback(err);
+                            }
+
+                        });
+
+                    });
+
+                }
+                updateObj['$set'].avatar = avatarUrl;
+                callback( null )
+            }
+
+            function updateAddressBook ( callback ) {
+
+                AddressBook.update( {"_id": entry._id }, updateObj)
+                    .exec( function( err, result ) {
+
+                        if ( err ) {
+                            return callback( err );
+                        }
+                        callback(null);
+
+                    });
+            }
+
             if ( body.numbers ) {
+                tasks.push( numberIsOccupied );
+            }
+
+            if ( body.avatar ) {
+                tasks.push( saveAddressBookAvatar )
+            }
+
+            tasks.push( updateAddressBook );
+
+            async.waterfall( tasks, function( err,result ) {
+
+                if ( err ) {
+                    return res.status(404).send(err.message);
+                }
+                res.status( 200 ).send({success: companion +  " updated successfully"});
+
+            });
+
+            /*if ( body.numbers ) {
                 getAllAddressBookNumber( userId, function( err, allNumbers ) {
                     var existNumbers;
                     var oldNumbers = lodash.pluck( entry.numbers, 'number' );
@@ -434,7 +540,7 @@ var User = function ( db ) {
                         }
                         res.status( 200 ).send({success: companion +  " updated successfully"});
                     });
-            }
+            }*/
         });
 
     };
@@ -519,6 +625,7 @@ var User = function ( db ) {
     this.blockNumbers = function( req, res, next ) {
         var userId = req.session.uId;
         var numbers = req.body;
+
         function changeNumberBlock ( number, callback ) {
             AddressBook.update(
                 {
@@ -544,8 +651,135 @@ var User = function ( db ) {
             }
             res.status( 200 ).send( {succes: "succefuly blocked/unblocked"} );
         })
+    };
+
+    function updateContact ( userId, contactName, contactBody, callback ) {
+        var oldNumbers = [];
+
+        function getContact( callback ) {
+
+            var findConditions = {
+                refUser: userId,
+                companion: contactName
+            };
+
+            var findFields = {
+                numbers: 1
+            };
+
+            AddressBook.findOne( findConditions, findFields )
+                .exec( function ( err, model ) {
+
+                    if ( err ) {
+
+                        return callback( err );
+
+                    } else if (!model) {
+
+                        model = new AddressBook( );
+
+                    } else {
+
+                        oldNumbers = model.numbers;
+
+                    }
+
+                    callback(null, model)
+                });
+        }
+
+        function checkNumber ( model, callback ) {
+            if ( ! contactBody.numbers ) {
+                return callback( null, model );
+            }
+            getAllAddressBookNumber( userId, function( err, allNumbers) {
+                var newNumbers = lodash.pluck( contactBody.numbers, 'number' );
+                var oldNumbers = lodash.pluck( oldNumbers, 'number' );
+                var usedNumbers = lodash.difference( allNumbers, oldNumbers );
+                var existNumbers = lodash.intersection( usedNumbers, newNumbers );
+
+                if ( existNumbers.length ) {
+                    err = new Error('{"success": "number(s) exist"}');
+                    err.status = 409;
+                    return callback( err )
+                }
+                callback( null, model )
+            })
+        }
+
+        function saveContact( model, callback ) {
+            model.set( contactBody );
+            /*model.save()
+                .exec( function( err, result ) {
+
+                    if ( err ) {
+                        return callback( err );
+                    }
+
+                    callback( null );
+
+                });*/
+            model.save(function( err, result ) {
+
+                if ( err ) {
+                    return callback( err );
+                }
+
+                callback( null );
+
+            })
+        }
+
+        function saveAvatar( model, callback ) {
+            var fileName = model._id.toString();
+            var userDir = userId;
+            var dirPath = path.join( 'public/images', userDir );
+            var base64File;
+            var data;
+
+            if ( ! contactBody.avatar ) {
+                return callback( null, model );
+            }
+
+            base64File = contactBody.avatar;
+            data = new Buffer( base64File, 'base64');
+
+            postFile( fileName, dirPath, data, function( err, avatarUrl ){
+                if ( err ) {
+                    return callback( err );
+                }
+                contactBody.avatar = avatarUrl;
+                callback( null, model )
+            })
+        }
+
+        async.waterfall([getContact, checkNumber, saveContact], function( err ) {
+            if ( err ) {
+                return callback( err );
+            }
+            callback( null );
+        })
+
     }
 
+    this.updateMyContact = function ( req, res, next) {
+        var userId = req.session.uId;
+        var contactName = req.params.companion;
+        var contactBody = req.body;
+
+        updateContact(
+            userId,
+            contactName,
+            contactBody,
+            function( err ) {
+                if ( err ) {
+                    return res.status(500).send(err.message); //todo change status and error
+                }
+                res.status(200).send({success: 'contact updated'})
+            }
+        );
+
+    }
 };
 
 module.exports = User;
