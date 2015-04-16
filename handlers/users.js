@@ -2,6 +2,7 @@
  * Created by Roman on 12.02.2015.
  */
 var User = function ( db ) {
+    var expess = require('express');
     var mongoose = require( 'mongoose' );
     var fs = require('fs');
     var path = require('path');
@@ -734,10 +735,10 @@ var User = function ( db ) {
         }
 
         function saveAvatar( model, callback ) {
-            var dirPath = path.join( 'public/images' );
-            var fileName = path.join(dirPath, model._id.toString()) + '.jpg';
+            var dirPath = path.join(path.dirname( require.main.filename ), 'uploads')//path.join( 'public/images' );
+            var fileName = model._id.toString() + '.jpg';
             var avatarUrl = 'user/addressbook/'+ model._id.toString()+'/avatar';
-            var userDir = userId;
+            //var userDir = userId;
             var base64File;
             var data;
 
@@ -748,13 +749,21 @@ var User = function ( db ) {
             base64File = contactBody.avatar;
             data = new Buffer( base64File, 'base64');
 
-            fs.writeFile( fileName, data, function( err ){
+            fileStor.postFile(dirPath, fileName, data, function(err){
+                if (err){
+                    return callback(err);
+                }
+                contactBody.avatar = avatarUrl;
+                callback(null, model);
+            });
+
+            /*fs.writeFile( fileName, data, function( err ){
                 if ( err ) {
                     return callback( err );
                 }
                 contactBody.avatar = avatarUrl;
                 callback( null, model )
-            });
+            });*/
         }
 
         async.waterfall([getContact, checkNumber, saveAvatar, saveContact], function( err ) {
@@ -788,7 +797,7 @@ var User = function ( db ) {
     this.getImage = function ( req, res, next ) {
         var fileName = req.params.companion + '.jpg';
         var options = {
-            root: path.join( path.dirname( require.main.filename ), 'public/images' )
+            root: path.join( path.dirname( require.main.filename ), 'uploads' )
         };
 
         res.sendFile( fileName, options, function(err) {
