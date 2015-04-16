@@ -451,7 +451,7 @@ var Message = function ( db, app ) {
                 $match:{
                     $or:[
                         { "companion._id": userId },
-                        {"owner._id": userId }
+                        { "owner._id": userId }
                     ]
                 }
             },
@@ -521,7 +521,7 @@ var Message = function ( db, app ) {
                             $match: {
                                 $and: [
                                     {
-                                        $in: {"show": userId}
+                                        "show": {$in: userId}
                                     },
                                     {
                                         $or: [
@@ -566,8 +566,9 @@ var Message = function ( db, app ) {
     };
 
     this.deleteChat = function(req, res, next){
+
         var userId = req.ssession.uId;
-        
+
     };
 };
 
