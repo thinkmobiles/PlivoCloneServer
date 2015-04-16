@@ -416,11 +416,15 @@ var Message = function ( db, app ) {
                 {"owner._id": userId},
                 {"companion._id": userId}
             ],
-            chat: chat
+            chat: chat,
+            $in: {
+                show: userId
+            }
         };
         projObj = {
             "_id": 0,
             chat: 0,
+            show: 0,
             "__v": 0
         };
         sortObj = {
@@ -452,7 +456,10 @@ var Message = function ( db, app ) {
                     $or:[
                         { "companion._id": userId },
                         {"owner._id": userId }
-                    ]
+                    ],
+                    show: {
+                        $in: [userId]
+                    }
                 }
             },
             {
@@ -521,7 +528,9 @@ var Message = function ( db, app ) {
                             $match: {
                                 $and: [
                                     {
-                                        $in: {"show": userId}
+                                        show: {
+                                            $in: [ userId ]
+                                        }
                                     },
                                     {
                                         $or: [
