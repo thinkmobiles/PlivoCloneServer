@@ -421,6 +421,7 @@ var Message = function ( db, app ) {
         projObj = {
             "_id": 0,
             chat: 0,
+            show: 0,
             "__v": 0
         };
         sortObj = {
@@ -451,8 +452,11 @@ var Message = function ( db, app ) {
                 $match:{
                     $or:[
                         { "companion._id": userId },
-                        { "owner._id": userId }
-                    ]
+                        {"owner._id": userId }
+                    ],
+                    show: {
+                        $in: [userId]
+                    }
                 }
             },
             {
@@ -521,7 +525,9 @@ var Message = function ( db, app ) {
                             $match: {
                                 $and: [
                                     {
-                                        "show": {$in: userId}
+                                        show: {
+                                            $in: [ userId ]
+                                        }
                                     },
                                     {
                                         $or: [
@@ -566,9 +572,8 @@ var Message = function ( db, app ) {
     };
 
     this.deleteChat = function(req, res, next){
-
         var userId = req.ssession.uId;
-
+        
     };
 };
 
