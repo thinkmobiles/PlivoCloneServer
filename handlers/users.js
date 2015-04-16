@@ -4,6 +4,7 @@
 var User = function ( db ) {
     var mongoose = require( 'mongoose' );
     var fs = require('fs');
+    var path = require('path');
     var User = db.model( 'user' );
     var AddressBook = db.model('addressbook');
     var crypto = require( 'crypto' );
@@ -256,8 +257,7 @@ var User = function ( db ) {
             "_id": 0,
             refUser: 0,
             "__v": 0,
-            "numbers._id": 0,
-            'avatar': 0
+            "numbers._id": 0
         };
 
         if ( req.query.q ) {
@@ -279,7 +279,7 @@ var User = function ( db ) {
 
     };
 
-    this.getAvatar = function (req, res, next){
+    /*this.getAvatar = function (req, res, next){
         var userId = req.session.uId;
         var companion = req.params.companion;
         var queryObj = {
@@ -302,7 +302,7 @@ var User = function ( db ) {
                 return res.status(200).json(entries)
             });
 
-    };
+    };*/
 
     this.deleteAddressBookEntry = function ( req, res, next ) {
         var companion = req.params.companion;
@@ -680,7 +680,8 @@ var User = function ( db ) {
 
                     } else {
 
-                        oldNumbers = model.numbers;
+                        oldNumbers =  model.toObject();
+                        oldNumbers = lodash.cloneDeep( oldNumbers.numbers );
 
                     }
 
@@ -694,7 +695,7 @@ var User = function ( db ) {
             }
             getAllAddressBookNumber( userId, function( err, allNumbers) {
                 var newNumbers = lodash.pluck( contactBody.numbers, 'number' );
-                var oldNumbers = lodash.pluck( oldNumbers, 'number' );
+                oldNumbers = lodash.pluck( oldNumbers, 'number' );
                 var usedNumbers = lodash.difference( allNumbers, oldNumbers );
                 var existNumbers = lodash.intersection( usedNumbers, newNumbers );
 
@@ -731,9 +732,10 @@ var User = function ( db ) {
         }
 
         function saveAvatar( model, callback ) {
-            var fileName = model._id.toString();
+            var dirPath = path.join( 'public/images' );
+            var fileName = path.join(dirPath, model._id.toString()) + '.jpg';
+            var avatarUrl = 'user/addressbook/'+ model._id.toString()+'/avatar';
             var userDir = userId;
-            var dirPath = path.join( 'public/images', userDir );
             var base64File;
             var data;
 
@@ -744,7 +746,7 @@ var User = function ( db ) {
             base64File = contactBody.avatar;
             data = new Buffer( base64File, 'base64');
 
-            postFile( fileName, dirPath, data, function( err, avatarUrl ){
+            fs.writeFile( fileName, data, function( err ){
                 if ( err ) {
                     return callback( err );
                 }
@@ -753,7 +755,7 @@ var User = function ( db ) {
             })
         }
 
-        async.waterfall([getContact, checkNumber, saveContact], function( err ) {
+        async.waterfall([getContact, checkNumber, saveAvatar, saveContact], function( err ) {
             if ( err ) {
                 return callback( err );
             }
@@ -779,7 +781,20 @@ var User = function ( db ) {
             }
         );
 
-    }
+    };
+
+    this.getImage = function ( req, res, next ) {
+        var fileName = req.params.companion + '.jpg';
+        var options = {
+            root: path.join( path.dirname( require.main.filename ), 'public/images' )
+        };
+
+        res.sendFile( fileName, options, function(err) {
+            if (err) {
+                return res.status( 500 ).end();
+            }
+        })
+    };
 };
 
 module.exports = User;
