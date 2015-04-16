@@ -9,6 +9,7 @@ module.exports = function ( db ) {
     var converstion = new schema( {
         body: String,
         chat: String,
+        show: [],
         owner: {
             _id: String,
             name: {

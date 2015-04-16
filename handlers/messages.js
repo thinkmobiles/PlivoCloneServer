@@ -244,6 +244,7 @@ var Message = function ( db, app ) {
                                     number: params.dst
                                 };
                                 conversation.body = body;
+                                conversation.show = [userId, sendToUserId];
                                 conversation.save(function (err, savedResponse) {
                                     if (err) {
                                         next(err)
@@ -288,7 +289,7 @@ var Message = function ( db, app ) {
                                 number: params.dst
                             };
                             conversation.body = body;
-
+                            conversation.show = [userId, dstId];
                             plivoParams = {
                                 src: params.src,
                                 dst: params.dst,
@@ -362,7 +363,7 @@ var Message = function ( db, app ) {
         } );
     };*/
 
-    this.getLastConversations = function ( req, res, next ) {
+    /*this.getLastConversations = function ( req, res, next ) {
         var userId = req.session.uId;
         var ownerObject = {
             matchId: userId,
@@ -390,7 +391,7 @@ var Message = function ( db, app ) {
                 res.status( 200 ).send( {success: resultArray} );
             }
         } );
-    };
+    };*/
 
     this.getConversations = function ( req, res, next ) {
         var userId = req.session.uId;
@@ -520,6 +521,9 @@ var Message = function ( db, app ) {
                             $match: {
                                 $and: [
                                     {
+                                        $in: {"show": userId}
+                                    },
+                                    {
                                         $or: [
                                             {"owner._id": userId},
                                             {"companion._id": userId}
@@ -559,6 +563,11 @@ var Message = function ( db, app ) {
                     res.status(200).send(lastRecent);
                 });
             });
+    };
+
+    this.deleteChat = function(req, res, next){
+        var userId = req.ssession.uId;
+        
     };
 };
 
