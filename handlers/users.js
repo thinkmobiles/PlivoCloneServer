@@ -705,6 +705,7 @@ var User = function ( db ) {
                 if ( existNumbers.length ) {
                     err = new Error('{"success": "number(s) exist"}');
                     err.status = 409;
+                    contactBody.numbers = existNumbers;
                     return callback( err )
                 }
                 callback( null, model )
@@ -779,6 +780,7 @@ var User = function ( db ) {
         var userId = req.session.uId;
         var contactName = req.params.companion;
         var contactBody = req.body;
+        var msg;
 
         updateContact(
             userId,
@@ -786,9 +788,17 @@ var User = function ( db ) {
             contactBody,
             function( err ) {
                 if ( err ) {
-                    return res.status(500).send(err.message); //todo change status and error
+                    if ( err.status === 409 ) {
+                        err.message = contactBody.numbers
+                    }
+                    return res.status( err.status || 500 ).send(err.message); //todo change status and error
                 }
-                res.status(200).send({success: 'contact updated'})
+                if ( contactBody.avatar ) {
+                    msg = {
+                        avatar: contactBody.avatar
+                    }
+                }
+                res.status(200).send( msg || {} );
             }
         );
 
