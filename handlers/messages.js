@@ -548,7 +548,12 @@ var Message = function ( db, app ) {
                             }
                         },
                         {
-                            $project: projectObj
+                         $project: {
+                             'body': 1,
+                             'companion': 1,
+                             'postedDate': 1,
+                             'owner': 1
+                         }
                         },
                         {
                             $sort: sortObj
