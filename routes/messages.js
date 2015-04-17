@@ -19,6 +19,7 @@ module.exports = function(db, app) {
 
     router.get( '/lastchats', session.authenticatedUser, messages.getLastByChats );
     router.get( '/recent', session.authenticatedUser, messages.getRecentCompanion );
+    router.delete( '/:n1/:n2', session.authenticatedUser, messages.deleteChat);
 
 
     return router;
