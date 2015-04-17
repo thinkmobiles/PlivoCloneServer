@@ -583,7 +583,7 @@ var AddressBook = function(db) {
     };
 
     this.getImage = function (req, res, next) {
-        var fileName = req.params.companion;
+        var fileName = req.params.filename;
         var options = {
             root: path.join(path.dirname(require.main.filename), 'uploads')
         };

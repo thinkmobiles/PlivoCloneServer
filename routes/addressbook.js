@@ -19,7 +19,7 @@ module.exports = function (db){
 
     router.post( '/numbers', session.authenticatedUser, addressbook.addNumberToContact );
     router.put( '/numbers/block', session.authenticatedUser, addressbook.blockNumbers );
-    router.get( '/:companion/avatar', addressbook.getImage );
+    router.get( '/avatar/:filename', addressbook.getImage );
 
     return router;
 }
