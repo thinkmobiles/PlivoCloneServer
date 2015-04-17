@@ -510,9 +510,10 @@ var AddressBook = function(db) {
 
         function saveAvatar(model, callback) {
             var postOptions;
+            var date = new Date();
             var dirPath = path.join(path.dirname(require.main.filename), 'uploads');
             var fileName = model._id.toString() + '.jpg';
-            var avatarUrl = 'addressbook/' + model._id.toString() + '/avatar';
+            var avatarUrl = 'addressbook/avatar/' + date.valueOf() + '_' + fileName;
             //var userDir = userId;
             var base64File;
             var data;
@@ -582,10 +583,12 @@ var AddressBook = function(db) {
     };
 
     this.getImage = function (req, res, next) {
-        var fileName = req.params.companion + '.jpg';
+        var fileName = req.params.companion;
         var options = {
             root: path.join(path.dirname(require.main.filename), 'uploads')
         };
+
+        fileName = fileName.slice( fileName.indexOf('_') + 1 );
 
         res.sendFile(fileName, options, function (err) {
             if (err) {
