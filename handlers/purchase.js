@@ -2,11 +2,12 @@
  * Created by eriy on 17.04.2015.
  */
 var iap = require('in-app-purchase');
-var xml = require('xmldom');
-var parser = xml.DOMParser;
+//var xml = require('xmldom');
+//var parser = xml.DOMParser;
+var xml = require('xml2js');
 var doc;
 
-doc.documentElement.getElementsByTagName('ProductReceipt')[0].getAttribute('AppId');
+/*doc.documentElement.getElementsByTagName('ProductReceipt')[0].getAttribute('AppId');*/
 iap.config({
     googlePublicKeyPath: ""
 });
@@ -40,8 +41,123 @@ receipts.windowsReceipt =
         '</Signature>' +
     '</Receipt>';
 
-doc = new parser().parseFromString(receipts);
-var appId = doc.documentElement.getElementsByTagName('ProductReceipt')[0].getAttribute('AppId');
+
+function purchase(  userId, os, receipt, callback ) {
+    var appId;
+    var productId;
+    var receiptId;
+    // os = windows || android
+    var parseOptions = {};
+    if ( os === 'windows ') {
+        xml.parseString( receipt, parseOptions, function( err, parsedReceipt ) {
+            var findOptions;
+            if ( err ) {
+                return callback( err );
+            }
+            if (
+                ! parsedReceipt.Receipt ||
+                ! parsedReceipt.Receipt.ProductReceipt ||
+                ! parsedReceipt.Receipt.ProductReceipt.ProductId ||
+                ! parsedReceipt.Receipt.ProductReceipt.AppId ||
+                ! parsedReceipt.Receipt.ProductReceipt.Id
+            ) {
+                err = new Error('receipt is not valid');
+                err.status = 400;
+                return callback( err );
+            }
+
+            appId = parsedReceipt.Receipt.ProductReceipt.AppId;
+            productId = parsedReceipt.Receipt.ProductReceipt.ProductId;
+            receiptId = parsedReceipt.Receipt.ProductReceipt.Id;
+
+            findOptions = {
+                "productId.windows": productId,
+                "appId.windows": appId
+            };
+            packages.findOne( findOptions) //todo require mongoose models
+                .exec(function( err, packageInfo ){
+                    if ( err ) {
+                        return callback( err );
+                    } else if ( !packageInfo ) {
+                        err = new Error('package not exist');
+                        err.status = 400;
+                        return callback( err );
+                    }
+                    findOptions = {
+                        receiptId: receiptId
+                    };
+
+                    user.findOne( findOptions ) //todo require mongoose models
+                        .exec( function( err, usedReceipt ) {
+                            if ( err ) {
+                                return callback( err );
+                            } else if ( usedReceipt ) {
+                                err = new Error('receipt is used');
+                                err.status = 400;
+                                return callback( err );
+                            }
+
+                            iap.setup( function( err ) {
+                                if ( err ) {
+                                    return callback( err );
+                                }
+                                iap.validate(iap.WINDOWS, receipt, function( err, windowsRess ){
+                                    var updateObj;
+                                    if ( err ) {
+                                        return callback( err );
+                                    }
+                                    if ( ! iap.isValidated( windowsRess )) {
+                                        err = new Error('receipt is not valid');
+                                        err.status = 400;
+                                        return callback( err );
+                                    }
+
+                                    updateObj = {
+                                        $inc: {
+                                            credits: packageInfo.credits
+                                        },
+                                        $push: {
+                                            buys: {
+                                                receiptId: receiptId,
+                                                price: packageInfo.price,
+                                                credits: packageInfo.credits
+                                            }
+                                        }
+                                    };
+
+                                    user.findByIdAndUpdate( userId, updateObj, function( err ) {
+                                        if ( err ) {
+                                            return callback( err );
+                                        }
+                                        callback( null )
+                                    } )
+                                });
+                            } );
+
+                        } );
+                });
+
+        });
+    } else {
+
+    }
+
+
+    packges.findOne({})
+    //1 validate if productId and appId is correct
+        //2 validate if receiptId is not used
+            //3 validate if receipt is valid (from google or microsoft)
+                //4 add credit that is binded to product
+                    //5 save used receipt in db
+}
+
+
+xml.parseString( receipts.windowsReceipt, {}, function( err, receipt ){
+
+});
+/*var appId = doc.documentElement.getElementsByTagName('ProductReceipt')[0].getAttribute('AppId');
+var productId = doc.documentElement.getElementsByTagName('ProductReceipt')[0].getAttribute('ProductId');
+var receiptId = doc.documentElement.getElementsByTagName('Product')[0].getAttribute('CertificateId');*/
 
 
 module.exports = receipts;
