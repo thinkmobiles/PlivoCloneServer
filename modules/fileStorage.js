@@ -12,7 +12,7 @@ var fileStorage = function () {
         if (fs.existsSync(targetPath)) {
             writeFile(filePath, options.data, callback);
         } else {
-            makeDir(targetPath, function (err) {
+            fs.mkdir(targetPath, function (err) {
                 if (err) {
                     if (callback) {
                         callback(err);

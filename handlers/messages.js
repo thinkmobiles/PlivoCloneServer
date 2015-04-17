@@ -416,7 +416,8 @@ var Message = function ( db, app ) {
                 {"owner._id": userId},
                 {"companion._id": userId}
             ],
-            chat: chat
+            chat: chat,
+            show: {$in: [ userId ]}
         };
         projObj = {
             "_id": 0,
@@ -510,7 +511,9 @@ var Message = function ( db, app ) {
         var sortObj = {
             'postedDate': -1
         };
-
+        var projectObj = {
+            'show': 0
+        }
         AddressBook.find({refUser : newObjectId( userId )})
             .exec(function(err, entries){
                 if (err){
@@ -545,6 +548,14 @@ var Message = function ( db, app ) {
                             }
                         },
                         {
+                         $project: {
+                             'body': 1,
+                             'companion': 1,
+                             'postedDate': 1,
+                             'owner': 1
+                         }
+                        },
+                        {
                             $sort: sortObj
                         },
                         {
@@ -572,8 +583,18 @@ var Message = function ( db, app ) {
     };
 
     this.deleteChat = function(req, res, next){
-        var userId = req.ssession.uId;
-        
+        var number1 = req.params.n1;
+        var number2 = req.params.n2;
+        var userId = req.session.uId;
+
+        var chat = (number1 < number2) ? (number1 + ':' + number2) : (number2 + ':' + number1);
+
+        Conversation.update({chat: chat}, {$pull: {show: userId}}, {multi: true}, function(err){
+            if (err){
+                return next(err);
+            }
+            res.status(200).send({success: "Chat deleted successfully"});
+        });
     };
 };
 
