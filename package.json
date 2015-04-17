@@ -23,6 +23,8 @@
     "plivo-node": "git://github.com/plivo/plivo-node.git",
     "serve-favicon": "~2.2.0",
     "socket.io": "^1.3.3",
-    "underscore": "^1.7.0"
+    "underscore": "^1.7.0",
+    "xml2js": "^0.4.8",
+    "xmldom": "^0.1.19"
   }
 }

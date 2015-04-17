@@ -20,7 +20,15 @@ module.exports = function ( db ) {
         numbers: [ {
             countryIso: String,
             number: String
-        } ]
+        } ],
+        buys: [
+            {
+                receiptId: String,
+                price: Number,
+                credits: Number,
+                buyDate: {type: Date, default: Date.now}
+            }
+        ]
         /*conversation: [{type: ObjectID, ref: 'conversation'}]*/
     }, {collection: 'Users'} );
     var userModel = db.model( 'user', user );
