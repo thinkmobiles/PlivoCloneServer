@@ -6,7 +6,33 @@ module.exports = function ( db ) {
     var mongoose = require( 'mongoose' );
     var schema = mongoose.Schema;
     var ObjectID = schema.Types.ObjectId;
-    var user = new schema( {
+    var user;
+    var number = new schema({
+        number: String,
+        countryIso: {
+            type: String,
+            uppercase: 1
+        },
+        expire: { type: Date }
+    }, {
+        toJSON: {
+            virtuals: 1
+        },
+        id: 0,
+        _id: 0
+    });
+
+    number.virtual('left').get(function(){
+        // expire = 'xxxx-xx-29|30 23:59:59 '
+        var day = 1000 * 60 * 60 * 24;
+        var now = new Date();
+        var endDate = new Date( this.expire || now ); // todo change
+        //var endDate = new Date( '2016-01-01' );
+
+        return Math.ceil( (endDate - now) / day );
+    });
+
+    user = new schema( {
         email: String,
         password: String,
         mobile: String,
@@ -17,10 +43,7 @@ module.exports = function ( db ) {
             first: String,
             last: String
         },
-        numbers: [ {
-            countryIso: String,
-            number: String
-        } ],
+        numbers: [ number ],
         buys: [
             {
                 receiptId: String,
