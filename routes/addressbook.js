@@ -13,8 +13,9 @@ module.exports = function (db){
     var session = new SessionHandler(db);
 
     router.delete( '/:companion', session.authenticatedUser, addressbook.deleteAddressBookEntry );
-    router.post( '/', session.authenticatedUser, addressbook.addAddresbookEntry );
+    //router.post( '/', session.authenticatedUser, addressbook.addAddresbookEntry );
     router.get( '/', session.authenticatedUser, addressbook.getAddressBook );
+    router.post( '/', session.authenticatedUser, addressbook.updateMyContact );
     router.put('/:companion', session.authenticatedUser, addressbook.updateMyContact);
 
     router.post( '/numbers', session.authenticatedUser, addressbook.addNumberToContact );
@@ -22,4 +23,4 @@ module.exports = function (db){
     router.get( '/avatar/:filename', addressbook.getImage );
 
     return router;
-}
+};
