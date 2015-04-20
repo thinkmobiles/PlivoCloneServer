@@ -430,10 +430,10 @@ var AddressBook = function(db) {
         })
     };
 
-    function updateContact(userId, contactName, contactBody, callback) {
+    function updateContact(isNew, userId, contactName, contactBody, callback) {
         var oldNumbers = [];
 
-        function getContact(callback) {
+        function getContact( callback ) {
 
             var findConditions = {
                 refUser: userId,
@@ -444,16 +444,24 @@ var AddressBook = function(db) {
                 numbers: 1
             };
 
-            AddressBook.findOne(findConditions, findFields)
+
+            AddressBook.findOne( findConditions, findFields )
                 .exec(function (err, model) {
 
-                    if (err) {
+                    if ( err ) {
 
                         return callback(err);
 
-                    } else if (!model) {
+                    } else if ( !model && isNew ) {
 
-                        model = new AddressBook();
+                        model = new AddressBook( contactBody );
+                        model.refUser = userId;
+
+                    } else if ( model && isNew ){
+
+                        err = new Error('contact name '+ contactBody.companion +' exist');
+                        err.status = 409;
+                        return callback( err );
 
                     } else {
 
@@ -477,7 +485,7 @@ var AddressBook = function(db) {
                 var existNumbers = lodash.intersection(usedNumbers, newNumbers);
 
                 if (existNumbers.length) {
-                    err = new Error('{"success": "number(s) exist"}');
+                    err = new Error( JSON.stringify( existNumbers ) );
                     err.status = 409;
                     return callback(err)
                 }
@@ -525,7 +533,7 @@ var AddressBook = function(db) {
             base64File = contactBody.avatar;
             postOptions = {
                 data : new Buffer(base64File, 'base64')
-            }
+            };
 
 
             fileStor.postFile(dirPath, fileName, postOptions, function (err) {
@@ -556,19 +564,20 @@ var AddressBook = function(db) {
 
     this.updateMyContact = function ( req, res, next) {
         var userId = req.session.uId;
-        var contactName = req.params.companion;
         var contactBody = req.body;
+        var isNew = req.params.companion ? false : true;
+        var contactName = req.params.companion || contactBody.companion;
         var msg;
 
+        //delete contactBody.show;
+
         updateContact(
+            isNew,
             userId,
             contactName,
             contactBody,
             function( err ) {
                 if ( err ) {
-                    if ( err.status === 409 ) {
-                        err.message = contactBody.numbers
-                    }
                     return res.status( err.status || 500 ).send(err.message); //todo change status and error
                 }
                 if ( contactBody.avatar ) {
