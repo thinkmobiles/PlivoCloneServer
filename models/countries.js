@@ -13,6 +13,8 @@ module.exports = function(db){
         name: String,
         countryIso: String,
         setFree: Number,
+        msgPriceInternal: Number,
+        msgPricePlivo: Number,
         costOfNumber: Number,
         ourCharge: Number,
         store: Number,
