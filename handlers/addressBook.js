@@ -336,7 +336,7 @@ var AddressBook = function(db) {
             }
             existNumbers = lodash.intersection(allNumbers, numArr);
             if (existNumbers.length) {
-                return res.status(409).send({success: existNumbers})
+                return res.status(409).send( JSON.stringify( existNumbers ) )
             }
 
             AddressBook.update(
