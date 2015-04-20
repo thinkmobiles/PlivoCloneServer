@@ -8,7 +8,10 @@ module.exports = function ( db ) {
     var ObjectID = schema.Types.ObjectId;
     var user;
     var number = new schema({
-        number: String,
+        number: {
+            type: String,
+            unique: true
+        },
         countryIso: {
             type: String,
             uppercase: 1
