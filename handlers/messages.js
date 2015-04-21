@@ -11,7 +11,6 @@ var Message = function ( db, app ) {
     var mongoose = require( 'mongoose' );
     var Conversation = db.model( 'converstion' );
     var AddressBook = db.model('addressbook');
-    var Price = db.model('countries');
     var UserHandler = require( '../handlers/users' );
     var newObjectId = mongoose.Types.ObjectId;
     var socketConnection = new SocketConnectionHandler( db );
@@ -149,39 +148,6 @@ var Message = function ( db, app ) {
             .exec( callback );
     }
 
-    function subCredits(userObject, isInternal, src, callback){ //todo test
-        var msgPrice;
-        var userObj;
-        var countryIso;
-
-        userObj = userObject.toJSON();
-        countryIso = lodash.findWhere(userObj.numbers, {number: src})['countryIso'];
-        countryIso = countryIso.toUpperCase();
-
-        Price.findOne({countryIso: countryIso}, function(err, res){
-            if (err){
-                return callback(err);
-            }
-
-            msgPrice = (isInternal) ? (res.msgPriceInternal) : (res.msgPricePlivo);
-
-            if (userObject.credits < msgPrice){
-                err = new Error('Have no credits');
-                err.status = 400;
-                return callback(err);
-            }
-            userObject.credits -= msgPrice;
-
-            userObject.save(function(err){
-                if (err){
-                    return callback(err);
-                }
-                callback(null);
-
-            });
-        });
-    }
-
     this.sendMessage = function ( req, res, next ) {
         /* var params = {
          'src': '15702217824',
@@ -217,7 +183,6 @@ var Message = function ( db, app ) {
                 next( err );
             } else {
                 users.findUserById( userId, function ( err, userObject ) {
-
                     if( err ) {
                         next( err );
                     } else  if (response) {
@@ -227,6 +192,7 @@ var Message = function ( db, app ) {
                         sendToUserId = companion._id;
                         conversation = new Conversation();
                         conversation.body = body;
+
 
                         findBlocked = {
                             refUser: sendToUserId,
@@ -242,8 +208,7 @@ var Message = function ( db, app ) {
                             _id: true
                         };
 
-
-                         AddressBook.findOne( findBlocked, projectionOpt, function ( err, user ) {
+                        AddressBook.findOne( findBlocked, projectionOpt, function ( err, user ) {
                             if ( err ) {
                                 return next(err);
                             }
@@ -284,19 +249,13 @@ var Message = function ( db, app ) {
                                     if (err) {
                                         next(err)
                                     } else {
-                                        subCredits(userObject, true, src ,function(err){
-                                            if (err){
-                                                return next(err);
+                                        if (io) {
+                                            destSocket = io.sockets.connected[socketId];
+                                            if (destSocket) {
+                                                destSocket.emit('receiveMessage', savedResponse);
                                             }
-                                            if (io) {
-                                                destSocket = io.sockets.connected[socketId];
-                                                if (destSocket) {
-                                                    destSocket.emit('receiveMessage', savedResponse);
-                                                }
-                                            }
-                                            res.status(201).send({success: 'Message Posted'});
-                                        });
-
+                                        }
+                                        res.status(201).send({success: 'Message Posted'});
                                     }
                                 });
                             }
@@ -338,21 +297,15 @@ var Message = function ( db, app ) {
                                 type: "sms"
                             };
 
-                            subCredits(userObject, false, src, function(err){
-                                if (err){
-                                    return next(err);
-                                }
-                                p.send_message( params, function ( status, response ) {
-                                    conversation.save(function(err){
-                                        if (err){
-                                            next(err);
-                                        } else {
-                                            res.status( 200 ).send( response );
-                                        }
-                                    });
+                            p.send_message( params, function ( status, response ) {
+                                conversation.save(function(err, saveResponse){
+                                    if (err){
+                                        next(err);
+                                    } else {
+                                        res.status( 200 ).send( response );
+                                    }
                                 });
                             });
-
 
                         } else {
                             err = new Error('Bad request');
