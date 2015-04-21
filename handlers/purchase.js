@@ -154,7 +154,9 @@ function purchase(userId, os, receipt, callback) {
         });
     } else {
         if (!receipt || !receipt.productId || !receipt.packageName || !receipt.orderId){
-
+            err = new Error('Receipt is not valid');
+            err.status = 400;
+            return callback(err);
         }
     }
 
@@ -174,6 +176,22 @@ xml.parseString(receipts.windowsReceipt, {}, function (err, receipt) {
 var productId = doc.documentElement.getElementsByTagName('ProductReceipt')[0].getAttribute('ProductId');
 var receiptId = doc.documentElement.getElementsByTagName('Product')[0].getAttribute('CertificateId');*/
 
+
+function xmlParse(receipt, callback){
+    var unParseObj;
+    var parser = xml.parseString;
+    parser(receipt, function(err, res){
+        if (err){
+            return callback(err);
+        }
+        unParseObj = {
+            appId: res.Receipt.ProductReceipt.AppId,
+            productId: res.Receipt.ProductReceipt.ProductId,
+            receiptId: res.Receipt.ProductReceipt.Id
+        };
+        callback(null, unParseObj);
+    });
+};
 
 module.exports = receipts;
 

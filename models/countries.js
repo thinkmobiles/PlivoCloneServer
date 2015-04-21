@@ -12,10 +12,16 @@ module.exports = function(db){
     var countries = new schema({
         name: String,
         countryIso: String,
-        setFree: Number,
+        setUpFee: Number,
         msgPriceInternal: Number,
         msgPricePlivo: Number,
-        costOfNumber: Number,
+        buyNumberPackages: [
+            {
+                price: Number,
+                packageName: String,
+                packageDuration: Number
+            }
+        ],
         ourCharge: Number,
         store: Number,
         firstFeeTotal: Number,

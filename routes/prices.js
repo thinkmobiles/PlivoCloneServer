@@ -10,7 +10,9 @@ module.exports = function (db) {
     var session = new SessionHandler(db);
     var prices = new PriceHandler(db);
 
-    router.get( '/countries', session.authenticatedUser, prices.getCountriesPrice );
+    router.get( '/countries', prices.getCountriesPrice );
+    router.post('/countries', prices.addCountriesPrice);
+    router.delete('/countries', prices.deleteCountriesPrice);
 
     return router;
 };

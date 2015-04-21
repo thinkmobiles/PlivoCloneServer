@@ -11,6 +11,7 @@ module.exports = function (db) {
     var numbers = new NumberHandler(db);
 
     router.get( '/search/:countryIso', /*session.authenticatedUser,*/ numbers.serchNumbers );
+    router.post('/buy', session.authenticatedUser, numbers.buyNumber);
     //router.post( '/', session.authenticatedUser, numbers.byNumber );
 
     return router;

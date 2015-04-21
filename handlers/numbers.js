@@ -27,9 +27,15 @@ var Number = function (db) {
         } );
     };
 
-    this.byNumber = function ( req, res, next ) {
+
+
+    this.buyNumber = function ( req, res, next ) {
         var params = req.body;
+        var packageName = params.packageName;
         var countryIso = params.countryIso || 'US';
+        var number = params.number;
+        var users = new UserHandler(db);
+        var userId = (req.session) ? req.session.uId: null;
         /*var appId = options.app_id || "";
          var number = options.number;
          var params = {
@@ -38,8 +44,8 @@ var Number = function (db) {
          };*/
         params.app_id = parseInt(process.env.PLIVO_APP_ID) || 14672593026521222;
 
-        p.buy_phone_number( params, function ( status, response ) {
-            var users = new UserHandler(db);
+       /* p.buy_phone_number( params, function ( status, response ) {
+
             var userId = (req.session) ? req.session.uId: null;
             var number;
 
@@ -50,7 +56,7 @@ var Number = function (db) {
                     err.status = 400;
                     next( err );
                 } else {
-                    users.addNumber( { userId: userId, number: number, countryIso: countryIso }, function(err, updatedUser){
+                    users.addNumber( { userId: userId, number: number, countryIso: countryIso, packageName: packageName }, function(err, updatedUser){
                         if(err){
                             next(err);
                         } else {
@@ -61,7 +67,13 @@ var Number = function (db) {
             } else {
                 res.status( status ).send( response );
             }
-        } );
+        } );*/
+        users.addNumber({userId: userId, number: number, countryIso: countryIso, packageName: packageName}, function(err, resultUres){
+            if (err){
+                return next(err);
+            }
+            res.status(200).send({success: number + "buy successfully"});
+        });
     }
 
 
