@@ -1,12 +1,12 @@
 /**
  * Created by User on 17.04.2015.
  */
+var mongoose = require('mongoose');
+var schema = mongoose.Schema;
 
-module.exports = function(db){
-    'use strict'
-    var mongoose = require('mongoose');
-    var schema = mongoose.Schema;
-    var packages = new schema({
+module.exports = function( db ){
+    'use strict';
+    var buyPackage = new schema( {
         name: String,
         productId: {
             windows: String,
@@ -17,8 +17,10 @@ module.exports = function(db){
             google: String
         },
         price: Number,
-        credits: Number,
-        options: []
-    }, {collection: 'BuyPackage'});
-    var buyPackage = db.model('packages', packages);
+        credits: Number
+    }, {
+        collection: 'BuyPackage'
+    } );
+
+    var buyPackageModel = db.model('buyPackage', buyPackage );
 };

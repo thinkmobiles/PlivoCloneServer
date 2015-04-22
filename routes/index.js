@@ -14,6 +14,7 @@ module.exports = function(app, db) {
     var session = new SessionHandler(db);
     var user = new UserHandler(db);
     var push = require('./push')(db);
+    var buy = require('./buy')(db);
 
 
     app.get( '/', function ( req, res, next ) {
@@ -32,6 +33,7 @@ module.exports = function(app, db) {
     app.use( '/price', prices );
     app.use( '/addressbook', addressbook );
     app.use( '/push', push );
+    app.use( '/buy', buy );
 
 
     function notFound(req, res, next){
