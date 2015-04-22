@@ -22,6 +22,13 @@ module.exports = function(db){
                 packageDuration: Number
             }
         ],
+        extendNumberPackages: [
+            {
+                price: Number,
+                packageName: String,
+                packageDuration: Number
+            }
+        ],
         ourCharge: Number,
         store: Number,
         firstFeeTotal: Number,

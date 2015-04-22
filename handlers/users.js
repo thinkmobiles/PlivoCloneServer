@@ -114,16 +114,20 @@ var User = function ( db ) {
     };
 
 
-   this.extendNumber = function(req, res, next){
-        var number = req.params.number;
+   this.extendNumber = function(req, res, next){  //todo test
+        var params = req.body;
+        var number = params.number;
+        var countryIso = params.countryIso;
+        var packageName = params.packageName;
         var numberPrice;
         var numberDuration;
         var numberDateExpire;
-        var countryIso = req.params.countryIso;
         var userId = req.session.uId;
         var userCredits;
         var findObject;
-        var creatDate;
+        var dateExpire;
+
+        var left;
 
         User.findOne({_id: userId}, function (err, resultUser) {
             if (err) {
@@ -132,6 +136,7 @@ var User = function ( db ) {
             else {
                 userCredits = resultUser.credits;
                 numberDateExpire = lodash.findWhere(resultUser.numbers, {number: number})['expire'];
+
                 findObject = {
                     countryIso: countryIso
                 };
@@ -140,15 +145,14 @@ var User = function ( db ) {
                     if (err){
                         return callback(err);
                     }
-                    if (result && result.buyNumberPackages){
-                        numberPrice = lodash.findWhere(result.buyNumberPackages, {packageName: packageName})['price'];
-                        numberDuration = lodash.findWhere(result.buyNumberPackages, {packageName: packageName})['packageDuration'];
+                    if (result && result.extendNumberPackages){
+                        numberPrice = lodash.findWhere(result.extendNumberPackages, {packageName: packageName})['price'];
+                        numberDuration = lodash.findWhere(result.extendNumberPackages, {packageName: packageName})['packageDuration'];
 
                         dateExpire = new Date(numberDateExpire);
-                        dateExpire.setDate(creatDate.getDate() + 2);
+                        dateExpire.setDate(1);
                         dateExpire.setMonth(dateExpire.getMonth() + numberDuration);
-                        dateExpire.setDate(0);
-                        dateExpire.setDate(dateExpire.getDate() - 1);
+                        dateExpire.setDate(daysInMonth(dateExpire.getMonth() + 1, dateExpire.getYear()) - 1);
                         dateExpire.setHours(23);
                         dateExpire.setMinutes(59);
                         dateExpire.setSeconds(59);
@@ -156,36 +160,40 @@ var User = function ( db ) {
                         if (userCredits < numberPrice){
                             var err = new Error('Have no credits');
                             err.status = 400;
-                            return err;
+                            return next(err);
                         }
 
-                        resultUser.credits -= numberPrice;
+                        //resultUser.credits -= numberPrice;
 
-                        var number = {
-                            number: options.number,
-                            countryIso: options.countryIso,
-                            expire: dateExpire
-                        };
 
-                        resultUser.numbers.push(number);
 
-                        resultUser.save(function(err, updatedUser){
+                        User.update({_id: userId, "numbers.number": number},{$set:{"numbers.$.expire":dateExpire}, $inc:{credits: -numberPrice}}, function(err, updateUser){
+                      //  resultUser.save(function(err, updatedUser){
                             if (err){
-                                return callback(err);
+                                return next(err);
                             }
-                            callback(null, updatedUser);
+                            User.findById(userId, function(err, findedUser){
+                                if (err){
+                                    return next(err);
+                                }
+                                left = lodash.findWhere(findedUser.numbers, {number: number})['left'];
+                                res.status(200).send({number: number, credits: findedUser.credits, left: left});
+                            });
+
+
                         });
 
                     } else {
-                        err = new Error('Not valid paramaeters');
+                        err = new Error('Not valid parameters');
                         err.status = 400;
-                        callback(err);
+                        next(err);
                     }
 
                 });
             }
         });
     };
+
     function daysInMonth (month, year) {
         return new Date(year, month, 0).getDate();
     }
@@ -194,7 +202,6 @@ var User = function ( db ) {
         var userId = options.userId;
         var userCredits;
         var numberPrice;
-        var dateNow;
         var numberDuration;
         var dateExpire;
         var packageName = options.packageName;
@@ -219,6 +226,7 @@ var User = function ( db ) {
 
                     dateExpire = new Date();
                     dateExpire.setDate(1);
+                    dateExpire.setMonth(dateExpire.getMonth() + numberDuration - 1);
                     dateExpire.setDate(daysInMonth(dateExpire.getMonth() + 1, dateExpire.getYear()) - 1);
                     dateExpire.setHours(23);
                     dateExpire.setMinutes(59);

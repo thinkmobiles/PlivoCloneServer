@@ -2,6 +2,7 @@
  * Created by Roman on 10.02.2015.
  */
 var plivo = require( 'plivo-node' );
+var lodash = require('lodash');
 var p = plivo.RestAPI( {
     "authId": process.env.PLIVO_AUTH_ID,
     "authToken": process.env.PLIVO_AUTH_TOKEN
@@ -56,6 +57,7 @@ var Number = function (db) {
                     err.status = 400;
                     next( err );
                 } else {
+                    number = '+' + number;
                     users.addNumber( { userId: userId, number: number, countryIso: countryIso, packageName: packageName }, function(err, updatedUser){
                         if(err){
                             next(err);
@@ -68,11 +70,12 @@ var Number = function (db) {
                 res.status( status ).send( response );
             }
         } );*/
-        users.addNumber({userId: userId, number: number, countryIso: countryIso, packageName: packageName}, function(err, resultUres){
+        users.addNumber({userId: userId, number: number, countryIso: countryIso, packageName: packageName}, function(err, resultUser){
             if (err){
                 return next(err);
             }
-            res.status(200).send({success: number + "buy successfully"});
+            var left = lodash.findWhere(resultUser.numbers, {number: number})['left'];
+            res.status(200).send({number: number, credits: resultUser.credits, left: left});
         });
     }
 

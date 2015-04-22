@@ -3,7 +3,7 @@
  */
 process.env.PLIVO_APP_ID = 14672593026521222;
 //process.env.DB_HOST = 'localhost';
-process.env.DB_HOST = '192.168.88.155';
+process.env.DB_HOST = /*'192.168.88.155'*/ 'localhost';
 //process.env.DB_NAME = "testStatistic";
 //process.env.DB_USER = "user";
 //process.env.DB_PASS = "1q2w3e!@#";

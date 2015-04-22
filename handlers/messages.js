@@ -162,7 +162,7 @@ var Message = function ( db, app ) {
             if (err){
                 return callback(err);
             }
-            if (res && res.msgPriceInternal && res.msgPricePlivo){
+            if (res && res.msgPriceInternal !== null && res.msgPricePlivo !== null){
                 msgPrice = (isInternal) ? (res.msgPriceInternal) : (res.msgPricePlivo);
 
                 if (userObject.credits < msgPrice){
@@ -176,7 +176,7 @@ var Message = function ( db, app ) {
                     if (err){
                         return callback(err);
                     }
-                    callback(null);
+                    callback(null, userObject.credits);
 
                 });
             } else {
@@ -291,7 +291,7 @@ var Message = function ( db, app ) {
                                     if (err) {
                                         next(err)
                                     } else {
-                                        subCredits(userObject, isInternal, src, function(err){
+                                        subCredits(userObject, isInternal, src, function(err, updatedCredits){
                                             if (err){
                                                 return next(err);
                                             }
@@ -301,7 +301,7 @@ var Message = function ( db, app ) {
                                                     destSocket.emit('receiveMessage', savedResponse);
                                                 }
                                             }
-                                            res.status(201).send({success: 'Message Posted'});
+                                            res.status(201).send({credits: updatedCredits});
                                         });
 
                                     }
@@ -346,7 +346,7 @@ var Message = function ( db, app ) {
                                 type: "sms"
                             };
 
-                            subCredits(userObject, isInternal, src, function(err){
+                            subCredits(userObject, isInternal, src, function(err, updatedCredits){
                                 if (err){
                                     return next(err);
                                 }
@@ -355,7 +355,7 @@ var Message = function ( db, app ) {
                                         if (err){
                                             next(err);
                                         } else {
-                                            res.status( 200 ).send( response );
+                                            res.status( 200 ).send( {credits: updatedCredits} );
                                         }
                                     });
                                 });
