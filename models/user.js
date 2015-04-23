@@ -37,7 +37,7 @@ module.exports = function ( db ) {
     });
 
     user = new schema( {
-        email: String,
+        email: {type: String, unique: true},
         password: String,
         mobile: String,
         avatar:String,

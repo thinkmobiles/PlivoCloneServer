@@ -7,7 +7,7 @@ process.env.DB_HOST = '192.168.88.250';
 //process.env.DB_NAME = "testStatistic";
 //process.env.DB_USER = "user";
 //process.env.DB_PASS = "1q2w3e!@#";
-process.env.DB_NAME = "testCall";
+process.env.DB_NAME = "testCallNew";
 //process.env.DB_PORT = 27100;
 process.env.DB_PORT = 27017;
 
