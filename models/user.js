@@ -3,6 +3,7 @@
  */
 module.exports = function ( db ) {
     "use strict";
+    //todo add indexes for number unique
     var mongoose = require( 'mongoose' );
     var schema = mongoose.Schema;
     var ObjectID = schema.Types.ObjectId;
@@ -29,14 +30,14 @@ module.exports = function ( db ) {
         // expire = 'xxxx-xx-29|30 23:59:59 '
         var day = 1000 * 60 * 60 * 24;
         var now = new Date();
-        var endDate = new Date( this.expire || now ); // todo change
+        var endDate = new Date( this.expire || now );
         //var endDate = new Date( '2016-01-01' );
 
         return Math.ceil( (endDate - now) / day );
     });
 
     user = new schema( {
-        email: String,
+        email: {type: String, unique: true},
         password: String,
         mobile: String,
         avatar:String,
@@ -46,15 +47,7 @@ module.exports = function ( db ) {
             first: String,
             last: String
         },
-        numbers: [ number ],
-        buys: [
-            {
-                receiptId: String,
-                price: Number,
-                credits: Number,
-                buyDate: {type: Date, default: Date.now}
-            }
-        ]
+        numbers: [ number ]
         /*conversation: [{type: ObjectID, ref: 'conversation'}]*/
     }, {collection: 'Users'} );
     var userModel = db.model( 'user', user );

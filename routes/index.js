@@ -13,6 +13,9 @@ module.exports = function(app, db) {
     var CountriesPriceHandler = require('../handlers/price');
     var session = new SessionHandler(db);
     var user = new UserHandler(db);
+    var push = require('./push')(db);
+    var buy = require('./buy')(db);
+
 
     app.get( '/', function ( req, res, next ) {
         res.status(200 ).send( 'Express start succeed' );
@@ -29,6 +32,8 @@ module.exports = function(app, db) {
     app.use( '/user', users );
     app.use( '/price', prices );
     app.use( '/addressbook', addressbook );
+    app.use( '/push', push );
+    app.use( '/buy', buy );
 
 
     function notFound(req, res, next){

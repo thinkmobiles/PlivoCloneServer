@@ -9,4 +9,7 @@ module.exports = function(db){
     require('./socketConnection')(db);
     require('./addressBook')(db);
     require('./countries')(db);
+    require('./buyHistory')(db);
+    require('./buyPackage')(db);
+    require('./push')(db);
 };

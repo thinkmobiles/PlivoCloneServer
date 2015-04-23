@@ -149,7 +149,7 @@ var Message = function ( db, app ) {
             .exec( callback );
     }
 
-    function subCredits(userObject, isInternal, src, callback){ //todo test
+    function subCredits(userObject, isInternal, src, callback){
         var msgPrice;
         var userObj;
         var countryIso;
@@ -162,23 +162,28 @@ var Message = function ( db, app ) {
             if (err){
                 return callback(err);
             }
+            if (res && res.msgPriceInternal !== null && res.msgPricePlivo !== null){
+                msgPrice = (isInternal) ? (res.msgPriceInternal) : (res.msgPricePlivo);
 
-            msgPrice = (isInternal) ? (res.msgPriceInternal) : (res.msgPricePlivo);
-
-            if (userObject.credits < msgPrice){
-                err = new Error('Have no credits');
-                err.status = 400;
-                return callback(err);
-            }
-            userObject.credits -= msgPrice;
-
-            userObject.save(function(err){
-                if (err){
+                if (userObject.credits < msgPrice){
+                    var err = new Error('Have no credits');
+                    err.status = 400;
                     return callback(err);
                 }
-                callback(null);
+                userObject.credits -= msgPrice;
 
-            });
+                userObject.save(function(err){
+                    if (err){
+                        return callback(err);
+                    }
+                    callback(null, userObject.credits);
+
+                });
+            } else {
+                err = new Error('Data not find');
+                err.status = 400;
+                callback(err);
+            }
         });
     }
 
@@ -206,6 +211,7 @@ var Message = function ( db, app ) {
         var chat;
         var dstId = '123456789';
         var io = (app) ? app.get( 'io' ) : null;
+        var isInternal;
         /*p.send_message( params, function ( status, response ) {
          console.log( 'Status: ', status );
          console.log( 'API Response:\n', response );
@@ -221,6 +227,7 @@ var Message = function ( db, app ) {
                     if( err ) {
                         next( err );
                     } else  if (response) {
+                        isInternal = true;
                         sConObject = response.socketConnection;
                         companion = response.companion;
                         socketId = sConObject.socketId;
@@ -284,7 +291,7 @@ var Message = function ( db, app ) {
                                     if (err) {
                                         next(err)
                                     } else {
-                                        subCredits(userObject, true, src ,function(err){
+                                        subCredits(userObject, isInternal, src, function(err, updatedCredits){
                                             if (err){
                                                 return next(err);
                                             }
@@ -294,7 +301,7 @@ var Message = function ( db, app ) {
                                                     destSocket.emit('receiveMessage', savedResponse);
                                                 }
                                             }
-                                            res.status(201).send({success: 'Message Posted'});
+                                            res.status(201).send({credits: updatedCredits});
                                         });
 
                                     }
@@ -303,6 +310,7 @@ var Message = function ( db, app ) {
                         });
                     } else {
                         if (params.src && params.dst && params.text) {
+                            isInternal = false;
                             conversation = new Conversation();
                             if (params.src > params.dst){
                                 chat = params.dst + ':' + params.src;
@@ -338,7 +346,7 @@ var Message = function ( db, app ) {
                                 type: "sms"
                             };
 
-                            subCredits(userObject, false, src, function(err){
+                            subCredits(userObject, isInternal, src, function(err, updatedCredits){
                                 if (err){
                                     return next(err);
                                 }
@@ -347,7 +355,7 @@ var Message = function ( db, app ) {
                                         if (err){
                                             next(err);
                                         } else {
-                                            res.status( 200 ).send( response );
+                                            res.status( 200 ).send( {credits: updatedCredits} );
                                         }
                                     });
                                 });
