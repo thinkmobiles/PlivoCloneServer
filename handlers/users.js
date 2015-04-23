@@ -32,7 +32,7 @@ var User = function ( db ) {
         } );
     }
 
-/*    function updateAddressBook (findObject, setObject, callback) {
+   /* function updateAddressBook (findObject, setObject, callback) {
         if (err) {
                 callback(err);
             } else {
