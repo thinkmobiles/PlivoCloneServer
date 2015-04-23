@@ -294,6 +294,10 @@ var Message = function ( db, app ) {
                                         next(err)
                                     } else {
                                         subCredits(userObject, isInternal, src, function(err, updatedCredits){
+                                            var launchMsg = {
+                                                src: params.src,
+                                                dst: params.dst
+                                            };
                                             if (err){
                                                 return next(err);
                                             }
@@ -303,7 +307,7 @@ var Message = function ( db, app ) {
                                                     destSocket.emit('receiveMessage', savedResponse);
                                                 }
                                             }
-                                            push.sendPush( sendToUserId.toString(), 'Test', conversation.body, params.src);
+                                            push.sendPush( sendToUserId.toString(), params.src, conversation.body, JSON.stringify( launchMsg ));
                                             res.status(201).send({credits: updatedCredits});
                                         });
 

@@ -58,12 +58,20 @@ var Push = function (db) {
     this.sendPush = function( userId, header, msg, launch  ) {
         Push.find( { refUser: newObjectId( userId ) }, function(err, pushChannels ) {
             function sendPushWin( push ){
-                wns.sendPush( push.channelURI, header, msg, launch, function () {} )
+                wns.sendPush( push.channelURI, header, msg, launch, function (err) {
+                    if ( err  && ( (err === 410) || (err === 404) ) ) {
+                        push.remove(push, function( err, result ){
+                            //nothing to do
+                        })
+                    }
+                } )
             }
-            var os ='WINDOWS'//todo
+            var os ='WINDOWS'; //todo
             switch ( os ) {
                 case 'WINDOWS': {
-                    async.each( pushChannels, sendPushWin, function(err, result){ console.log(err); console.log(result)} )
+                    async.each( pushChannels, sendPushWin, function( result ){
+                        // nothing to do
+                    } )
                 }
                     break;
                 case 'GOOGLE': {
