@@ -32,14 +32,14 @@ var User = function ( db ) {
         } );
     }
 
-    function updateAddressBook (findObject, setObject, callback) {
+   /* function updateAddressBook (findObject, setObject, callback) {
         if (err) {
                 callback(err);
             } else {
                 callback(null, user)
             }
         })
-    }
+    }*/
 
     this.signUp = function ( req, res, next ) {
         var userBody = req.body;
