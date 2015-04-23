@@ -2,6 +2,7 @@
  * Created by Roman on 10.02.2015.
  */
 var plivo = require( 'plivo-node' );
+var lodash = require('lodash');
 var p = plivo.RestAPI( {
     "authId": process.env.PLIVO_AUTH_ID,
     "authToken": process.env.PLIVO_AUTH_TOKEN
@@ -27,9 +28,15 @@ var Number = function (db) {
         } );
     };
 
-    this.byNumber = function ( req, res, next ) {
+
+
+    this.buyNumber = function ( req, res, next ) {
         var params = req.body;
+        var packageName = params.packageName;
         var countryIso = params.countryIso || 'US';
+        var number = params.number;
+        var users = new UserHandler(db);
+        var userId = (req.session) ? req.session.uId: null;
         /*var appId = options.app_id || "";
          var number = options.number;
          var params = {
@@ -38,8 +45,8 @@ var Number = function (db) {
          };*/
         params.app_id = parseInt(process.env.PLIVO_APP_ID) || 14672593026521222;
 
-        p.buy_phone_number( params, function ( status, response ) {
-            var users = new UserHandler(db);
+       /* p.buy_phone_number( params, function ( status, response ) {
+
             var userId = (req.session) ? req.session.uId: null;
             var number;
 
@@ -50,7 +57,8 @@ var Number = function (db) {
                     err.status = 400;
                     next( err );
                 } else {
-                    users.addNumber( { userId: userId, number: number, countryIso: countryIso }, function(err, updatedUser){
+                    number = '+' + number;
+                    users.addNumber( { userId: userId, number: number, countryIso: countryIso, packageName: packageName }, function(err, updatedUser){
                         if(err){
                             next(err);
                         } else {
@@ -61,7 +69,14 @@ var Number = function (db) {
             } else {
                 res.status( status ).send( response );
             }
-        } );
+        } );*/
+        users.addNumber({userId: userId, number: number, countryIso: countryIso, packageName: packageName}, function(err, resultUser){
+            if (err){
+                return next(err);
+            }
+            var left = lodash.findWhere(resultUser.numbers, {number: number})['left'];
+            res.status(200).send({number: number, credits: resultUser.credits, left: left});
+        });
     }
 
 
