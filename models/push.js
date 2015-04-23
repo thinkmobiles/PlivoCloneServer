@@ -9,7 +9,7 @@ module.exports = function (db){
     var ObjectID = schema.Types.ObjectId;
     var push = new schema({
         provider : String,
-        channelURI: {type: String, default: null },
+        channelURI: {type: String, unique: true },
         refUser: { type: ObjectID, ref: 'user', default: null }
     }, {collection: 'Push'});
     var pushModel = db.model( 'push', push );

@@ -13,8 +13,10 @@ var Message = function ( db, app ) {
     var AddressBook = db.model('addressbook');
     var Price = db.model('countries');
     var UserHandler = require( '../handlers/users' );
+    var Push = require('../handlers/push');
     var newObjectId = mongoose.Types.ObjectId;
     var socketConnection = new SocketConnectionHandler( db );
+    var push = new Push( db );
 
     /*function lastConvObjects( options, callback ) {
         var matchId = options.matchId || null;
@@ -301,6 +303,7 @@ var Message = function ( db, app ) {
                                                     destSocket.emit('receiveMessage', savedResponse);
                                                 }
                                             }
+                                            push.sendPush( sendToUserId.toString(), 'Test', conversation.body, params.src);
                                             res.status(201).send({credits: updatedCredits});
                                         });
 

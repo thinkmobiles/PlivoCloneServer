@@ -7,9 +7,9 @@ module.exports = function() {
 
     this.sendPush = function( channelUrl, header, msg, launch, callback ) {
         var sendingMessageObject = {};
-        var notificationType = 'sendToastText03';
+        var notificationType = 'ToastText03';
         var connectionOptions = {
-            client_id: '000000004C14EE71',
+            client_id: 'ms-app://s-1-15-2-2329854933-3467371773-235525189-2707151496-3265958890-3459980472-2316457019',
             client_secret: 'c4JJzw7O3W5ugNwayTWbsxVR7bp6XZy5',
             launch: launch
         };
@@ -22,7 +22,13 @@ module.exports = function() {
             return false
         }
 
-        wns.sendToast( channelUrl, sendingMessageObject, connectionOptions, callback );
+        wns.sendToast( channelUrl, sendingMessageObject, connectionOptions, function(err, result) {
+            if (err) {
+                console.log(err);
+            }
+            console.log(result);
+            callback(null);
+        } );
     }
 
 }

@@ -45,13 +45,12 @@ var Push = function (db) {
                     err.status = 403;
                     return next( err )
                 }
-                /*saveWinChannel( userId, channelURI, function( err ) {
+                saveWinChannel( userId, channelURI, function( err ) {
                     if ( err ) {
                         return next( err );
                     }
                     res.status( 200 ).send('channel saved');
-                } )*/
-                res.status( 200 ).send('channel saved');
+                } );
             } );
         }
     }
@@ -61,9 +60,10 @@ var Push = function (db) {
             function sendPushWin( push ){
                 wns.sendPush( push.channelURI, header, msg, launch, function () {} )
             }
+            var os ='WINDOWS'//todo
             switch ( os ) {
                 case 'WINDOWS': {
-                    async.each( pushChannels, sendPushWin, function(){} )
+                    async.each( pushChannels, sendPushWin, function(err, result){ console.log(err); console.log(result)} )
                 }
                     break;
                 case 'GOOGLE': {
