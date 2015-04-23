@@ -68,7 +68,7 @@ var User = function ( db ) {
             if( err ) {
                 next( err );
             } else if( user && user._id ) {
-                res.status( 409 ).send( {success: "user exist with email " + email + 'exist'} );
+                res.status( 409 ).send( {success: "user exist with email " + email } );
             } else {
                 user = new User( userBody );
                 user.save( function ( err, user ) {
