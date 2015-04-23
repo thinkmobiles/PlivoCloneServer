@@ -33,9 +33,7 @@ var User = function ( db ) {
     }
 
     function updateAddressBook (findObject, setObject, callback) {
-
-        User.update( findObject, setObject, function (err, user) {
-            if (err) {
+        if (err) {
                 callback(err);
             } else {
                 callback(null, user)
@@ -235,13 +233,14 @@ var User = function ( db ) {
                     if (userCredits < numberPrice){
                         var err = new Error('Have no credits');
                         err.status = 400;
-                        return err;
+                        return callback(err);
                     }
 
                     resultUser.credits -= numberPrice;
 
+                    var newNumber = '+' +  options.number;
                     var number = {
-                        number: options.number,
+                        number: newNumber,
                         countryIso: options.countryIso,
                         expire: dateExpire
                     };
