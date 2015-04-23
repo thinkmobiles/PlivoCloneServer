@@ -57,7 +57,7 @@ var Number = function (db) {
                     err.status = 400;
                     next( err );
                 } else {
-                    number = '+' + number;
+
                     users.addNumber( { userId: userId, number: number, countryIso: countryIso, packageName: packageName }, function(err, updatedUser){
                         if(err){
                             next(err);
@@ -70,6 +70,7 @@ var Number = function (db) {
                 res.status( status ).send( response );
             }
         } );*/
+        number = '+' + number;
         users.addNumber({userId: userId, number: number, countryIso: countryIso, packageName: packageName}, function(err, resultUser){
             if (err){
                 return next(err);
