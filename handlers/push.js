@@ -45,12 +45,13 @@ var Push = function (db) {
                     err.status = 403;
                     return next( err )
                 }
-                saveWinChannel( userId, channelURI, function( err ) {
+                /*saveWinChannel( userId, channelURI, function( err ) {
                     if ( err ) {
                         return next( err );
                     }
                     res.status( 200 ).send('channel saved');
-                } )
+                } )*/
+                res.status( 200 ).send('channel saved');
             } );
         }
     }

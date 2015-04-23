@@ -64,7 +64,7 @@ var User = function ( db ) {
         shaSum.update( password );
         userBody.password = shaSum.digest( 'hex' );
 
-        User.findOne( {email: email}, function ( err, user ) {
+        User.findOne( {email: email.toLowerCase()}, function ( err, user ) {
             if( err ) {
                 next( err );
             } else if( user && user._id ) {
