@@ -11,6 +11,7 @@ module.exports = function ( db ) {
     var number = new schema({
         number: {
             type: String
+            //, unique: true
         },
         countryIso: {
             type: String,
