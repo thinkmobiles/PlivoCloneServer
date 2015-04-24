@@ -10,8 +10,8 @@ module.exports = function ( db ) {
     var user;
     var number = new schema({
         number: {
-            type: String,
-            unique: true
+            type: String
+            //, unique: true
         },
         countryIso: {
             type: String,
