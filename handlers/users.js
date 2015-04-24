@@ -266,6 +266,8 @@ var User = function ( db ) {
 
     };
 
+
+
     this.updateAccount = function ( req, res, next ) {
         var options = req.body;
         var userId = req.session.uId || req.params.id;

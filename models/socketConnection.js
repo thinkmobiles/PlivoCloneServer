@@ -6,7 +6,7 @@ module.exports = function ( db ) {
     var mongoose = require( 'mongoose' );
     var schema = mongoose.Schema;
     var socketConnection = new schema( {
-        socketId: String,
+        socketId: [String],
         userId: String,
         lastUpdated: {type: Date, default: Date.now}
     }, {collection: 'SocketConnection'} );

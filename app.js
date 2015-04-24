@@ -6,6 +6,8 @@ var bodyParser = require( 'body-parser' );
 var mongoose = require( 'mongoose' );
 var app = express();
 var sockets = require( 'socket.io' );
+var SchedulerHandler;
+var shedule;
 
 
 app.use( function(req, res, next) {
@@ -72,6 +74,12 @@ mainDb.once( 'open', function callback() {
 
     require('./routes')(app, mainDb);
 
+    // TODO test schedule
+
+    SchedulerHandler = require('./handlers/schedule');
+    shedule = new SchedulerHandler(mainDb);
+    shedule.cronJob.start();
+
     debug = require( 'debug' )( 'Plivo:server' );
     http = require( 'http' );
     port = parseInt( process.env.PORT) || '8830';
@@ -104,7 +112,7 @@ mainDb.once( 'open', function callback() {
         });
         socket.on('disconnect', function () {
             var data = {
-                socketId: socket.id
+                socketId: socket.id,
             };
             socketConnection.unregisterSocket( data );
             console.log('Socket disconnected' + socket.id);

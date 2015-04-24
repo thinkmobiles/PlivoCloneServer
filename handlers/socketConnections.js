@@ -11,9 +11,12 @@ var SocketConnection = function (db) {
             userId: options.uId
         };
         var updatedObject = {
-            socketId: options.socketId,
+            $push: {socketId: options.socketId},
             userId: options.uId
         };
+
+
+
         var optionsObject = {upsert:true};
 
         SocketConnectionModel.findOneAndUpdate(query, updatedObject, optionsObject, function(err, updatedResult){
@@ -27,9 +30,10 @@ var SocketConnection = function (db) {
 
     this.unregisterSocket = function( options ) {
         var query = {
-            socketId: options.uId
+            socketId: {$in : [options.socketId]}
         };
-        SocketConnectionModel.findOneAndRemove( query, function( err, document ) {
+
+        SocketConnectionModel.findOneAndUpdate( query, function( err, document ) {
             if ( err ) {
                 console.error( new Error(err) );
             } else {

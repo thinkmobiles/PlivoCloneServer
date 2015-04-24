@@ -232,7 +232,7 @@ var Message = function ( db, app ) {
                         isInternal = true;
                         sConObject = response.socketConnection;
                         companion = response.companion;
-                        socketId = sConObject.socketId;
+                        //socketId = sConObject.socketId;
                         sendToUserId = companion._id;
                         conversation = new Conversation();
                         conversation.body = body;
@@ -298,15 +298,29 @@ var Message = function ( db, app ) {
                                                 return next(err);
                                             }
                                             if (io) {
-                                                destSocket = io.sockets.connected[socketId];
+                                                async.each(sConObject.socketId, function(socketId, callback){
+                                                    destSocket = io.sockets.connected[socketId];
+                                                    if (destSocket){
+                                                        destSocket.emit('receiveMessage', savedResponse);
+                                                        callback(null);
+                                                    } else {
+                                                        err = new Error('Destination socket not found');
+                                                        err.status = 400;
+                                                        callback(err);
+                                                    }
+                                                }, function(err){
+                                                    if (err){
+                                                        return next(err);
+                                                    }
+                                                });
+                                                /*destSocket = io.sockets.connected[socketId];
                                                 if (destSocket) {
                                                     destSocket.emit('receiveMessage', savedResponse);
-                                                }
+                                                }*/
                                             }
                                             push.sendPush( sendToUserId.toString(), 'Test', conversation.body, params.src);
                                             res.status(201).send({credits: updatedCredits});
                                         });
-
                                     }
                                 });
                             }
