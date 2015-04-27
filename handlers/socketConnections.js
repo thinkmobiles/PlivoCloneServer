@@ -33,7 +33,13 @@ var SocketConnection = function (db) {
             socketId: {$in : [options.socketId]}
         };
 
-        SocketConnectionModel.findOneAndUpdate( query, function( err, document ) {
+        var updateObj = {
+            $pull: {
+                socketId: options.socketId
+            }
+        };
+
+        SocketConnectionModel.findOneAndUpdate( query, updateObj, function( err, document ) {
             if ( err ) {
                 console.error( new Error(err) );
             } else {
@@ -53,14 +59,24 @@ var SocketConnection = function (db) {
                     if(err){
                         callback(new Error(err));
                     } else if(socketConnections && socketConnections.length){
+
                         console.log(socketConnections.length);
                         respondObject.socketConnection = socketConnections[0];
                         respondObject.companion = user;
                         callback(null, respondObject);
+
                     } else {
-                        err = new Error("Connection not provided. Please register socket ");
+
+                        socketConnections = {
+                            socketId:[]
+                        };
+                        respondObject.socketConnection = socketConnections;
+                        respondObject.companion = user;
+                        callback( null, respondObject );
+                        /*err = new Error("Connection not provided. Please register socket ");
                         err.status = 400;
-                        callback(err);
+                        callback(err);*/
+
                     }
                 });
             } else {

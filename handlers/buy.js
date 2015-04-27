@@ -83,7 +83,30 @@ var Buy = function (db) {
     }
 
     function checkReceipt( receipt, seller, callback ) {
-        var sellerType = seller === 'WINDOWS' ? iap.WINDOWS : iap.GOOGLE;
+        var sellerType;
+        var err;
+
+        switch (seller ) {
+            case 'WINDOWS': {
+                sellerType = iap.WINDOWS;
+            }
+                break;
+
+            case 'GOOGLE': {
+                err = new Error('not implemented');
+                err.status = 400;
+                return callback( err );
+            }
+                break;
+
+            default: {
+                err = new Error('not implemented');
+                err.status = 400;
+                return callback( err );
+            }
+                break;
+        }
+
         iap.setup( function ( err ) {
             if ( err ) {
                 return callback( err )
@@ -92,17 +115,11 @@ var Buy = function (db) {
                 if ( err ) {
                     return callback( err );
                 }
+
                 if ( iap.isValidated( receiptRes ) ) {
-                    if (sellerType === iap.WINDOWS ) {
-                        //return parseWindowsReceipt( receipt, callback );
-                        return callback( null, iap.getPurchaseData( receiptRes ) );
-                    } else {
-                        //return parseGoogleReceipt( receipt, callback ); //todo change
-                        err = new Error('not implemented');
-                        err.status = 400;
-                        return callback( err )
-                    }
+                    return callback( null, iap.getPurchaseData( receiptRes ) );
                 }
+
                 err = new Error('not valid');
                 err.status = 400;
                 callback( err );
@@ -190,19 +207,7 @@ var Buy = function (db) {
         })
     }
 
-    this.checkReceipt = function( req, res, next ) {
-        var receipt = req.body.receipt;
-        receipt = receipt1000;
-        //receipt = receipt.replace('<?xml version="1.0"?>',"");
-        if ( receipt ) {
-            validateReceipt(receipt, 'WINDOWS', function( err, response ){
-                if (err) {
-                    return res.status(500).send(err.message);
-                }
-                res.status(200).send(response);
-            })
-        }
-    };
+
     function saveHistory( appId, productId, receiptId, os, rawReceipt, callback ){
         BuyHistory.insert();
     }

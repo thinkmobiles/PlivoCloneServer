@@ -164,27 +164,27 @@ var Message = function ( db, app ) {
             if (err){
                 return callback(err);
             }
-            if (res && res.msgPriceInternal !== null && res.msgPricePlivo !== null){
+            if (res && res.msgPriceInternal !== undefined && res.msgPricePlivo !== undefined ){
                 msgPrice = (isInternal) ? (res.msgPriceInternal) : (res.msgPricePlivo);
 
                 if (userObject.credits < msgPrice){
-                    var err = new Error('Have no credits');
+                    err = new Error('Have no credits');
                     err.status = 400;
                     return callback(err);
                 }
                 userObject.credits -= msgPrice;
 
-                userObject.save(function(err){
-                    if (err){
+                userObject.save( function(err){
+                    if ( err ){
                         return callback(err);
                     }
-                    callback(null, userObject.credits);
+                    callback( null, userObject.credits );
 
                 });
             } else {
-                err = new Error('Data not find');
-                err.status = 400;
-                callback(err);
+                err = new Error('no price record');
+                err.status = 404;
+                callback( err );
             }
         });
     }
@@ -228,7 +228,7 @@ var Message = function ( db, app ) {
 
                     if( err ) {
                         next( err );
-                    } else  if (response) {
+                    } else  if ( response ) {
                         isInternal = true;
                         sConObject = response.socketConnection;
                         companion = response.companion;
@@ -308,9 +308,10 @@ var Message = function ( db, app ) {
                                                         destSocket.emit('receiveMessage', savedResponse);
                                                         callback(null);
                                                     } else {
-                                                        err = new Error('Destination socket not found');
-                                                        err.status = 400;
-                                                        callback(err);
+                                                        /*err = new Error('Destination socket not found');
+                                                        err.status = 404;
+                                                        callback(err);*/
+                                                        callback(null)
                                                     }
                                                 }, function(err){
                                                     if (err){
@@ -322,7 +323,11 @@ var Message = function ( db, app ) {
                                                     destSocket.emit('receiveMessage', savedResponse);
                                                 }*/
                                             }
-                                            push.sendPush( sendToUserId.toString(), params.src, conversation.body, JSON.stringify( launchMsg ));
+                                            // todo move status check to sendPush
+                                            if ( companion &&  companion.enablepush ) {
+                                                push.sendPush( sendToUserId.toString(), params.src, conversation.body, JSON.stringify( launchMsg ));
+                                            };
+
                                             res.status(201).send({credits: updatedCredits});
                                         });
                                     }

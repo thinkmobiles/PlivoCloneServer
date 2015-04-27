@@ -112,10 +112,10 @@ mainDb.once( 'open', function callback() {
         });
         socket.on('disconnect', function () {
             var data = {
-                socketId: socket.id,
+                socketId: socket.id
             };
             socketConnection.unregisterSocket( data );
-            console.log('Socket disconnected' + socket.id);
+            console.log('Socket disconnected ' + socket.id);
         });
     });
 } );

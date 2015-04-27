@@ -38,27 +38,58 @@ var Push = function (db) {
 
         if ( channelURI && provider ) {
             User.findOne( {_id: userId, enablepush: true }, function( err, resUser ){
-                if ( err && err.code !== 11000 ) {
+                if ( err ) {
                     return next( err );
                 }
+
                 if ( !resUser ) {
                     err = new Error('push notification is forbidden');
                     err.status = 403;
                     return next( err )
                 }
-                saveWinChannel( userId, channelURI, function( err ) {
-                    if ( err ) {
+
+                switch ( provider ) {
+                    case 'WINDOWS': {
+                        saveWinChannel( userId, channelURI, function( err ) {
+                            if ( err && err.code !== 11000 ) {
+                                err = new Error('channel exist');
+                                err.status = 409;
+                                return next( err );
+                            }
+                            res.status( 200 ).send('channel saved');
+                        } );
+                    }
+                        break;
+
+                    case 'GOOGLE': {
+
+                        res.status( 500 ).send('not implemented');
+                    }
+                        break;
+
+                    default: {
+                        res.status( 500 ).send('not implemented');
+                    }
+                        break;
+                }
+
+                /*saveWinChannel( userId, channelURI, function( err ) {
+                    if ( err && err.code !== 11000 ) {
+                        err = new Error('channel exist');
+                        err.status = 409;
                         return next( err );
                     }
                     res.status( 200 ).send('channel saved');
-                } );
+                } );*/
+
             } );
         }
-    }
+    };
 
     this.sendPush = function( userId, header, msg, launch  ) {
 
         Push.find( { refUser: newObjectId( userId )  }, function( err, pushChannels ) {
+
             function sendOnePush( onePush, callback ){
 
                 if ( !onePush || !onePush.provider || !onePush.channelURI ) {
@@ -71,7 +102,7 @@ var Push = function (db) {
 
                         wns.sendPush( onePush.channelURI, header, msg, launch, function (err) {
                             if ( err  && ( (err === 410) || (err === 404) ) ) {
-                                push.remove(onePush, function( err, result ){
+                                onePush.remove( function( err, result ){
                                     if ( err ) {
                                         //return callback( err );
                                         return callback(null);
@@ -93,12 +124,13 @@ var Push = function (db) {
                         break;
                 }
             }
+
             async.each( pushChannels, sendOnePush, function( err, result ){
 
             });
 
         } );
-    }
+    };
 
     this.sendTestPush = function ( req, res, next ) {
         self.sendPush( "5538ad3663e4d9634200000c", '+300000000000', 'Test From Backend \nPlease contact me in skype.  Alexandr Roman. \n Чесно.', JSON.stringify({ src: '+300000000000', dst:  "+16133191044" }) );

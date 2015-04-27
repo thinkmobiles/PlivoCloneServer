@@ -107,7 +107,7 @@ var Number = function (db) {
                         removeNumber = {
                             number: number.number
                         };
-                        // todo uncomment lines below for running delete number through the PLIVO
+                        // todo uncomment lines below for running delete number through the PLIVO and insert deleting from database in callback
                         /*p.unrent_number(removeNumber, function(err){
                              if (err){
                              return callback(err);
@@ -128,7 +128,7 @@ var Number = function (db) {
                         if (err) {
                             return logWriter.log('', err.message + '\n' + err.stack);
                         }
-                        console.log('success');
+                        logWriter.log(); //todo informative log
                     });
                 });
             });
