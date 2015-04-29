@@ -41,7 +41,10 @@ module.exports = function ( db ) {
         password: String,
         mobile: String,
         avatar:String,
-        credits: Number,
+        credits: {
+            type: Number,
+            default: 0
+        },
         enablepush: { type: Boolean, default: true },
         name: {
             first: String,
