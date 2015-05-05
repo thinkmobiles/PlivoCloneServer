@@ -5,6 +5,7 @@ var plivo = require( 'plivo-node' );
 var logWriter = require('../modules/logWriter')();
 var async = require('async');
 var lodash = require('lodash');
+var util = require('util');
 var p = plivo.RestAPI( {
     "authId": process.env.PLIVO_AUTH_ID,
     "authToken": process.env.PLIVO_AUTH_TOKEN
@@ -84,9 +85,48 @@ var Number = function (db) {
         });
     };
 
+    function deleteExpiredNumbers( now, userModel, callback ){
+        var i;
+        var length = 0;
+        var numbersNew;
+        if ( userModel.numbers && util.isArray(userModel.numbers) ) {
+            length = userModel.numbers.length;
+        }
+        numbersNew = lodash.remove(userModel.numbers, function( number ){
+            var isOld =  number.expire < now;
+            if ( isOld ) {
+                /*p.unrent_number(removeNumber, function(err){
+                    if (err){
+                        return callback(err);
+                    }
+                });*/
+                logWriter.log('Number ' + number.number + ' is unrented')
+            }
+
+            return isOld;
+        });
+        userModel.save( callback );
+    }
+
+    this.deleteUnrentNumbers = function(){
+        var now = new Date();
+        var findCond = {
+            "numbers.expire": { $lt: now }
+        };
 
 
-    this.deleteUnrentNumbers = function() {
+        User.find( findCond ).exec( function(err, users){
+            async.eachLimit( users, 3, async.apply( deleteExpiredNumbers, now ), function( err, results ){ //TODO set limit constant and
+                if ( err ) {
+                    return console.log( err.message );
+                    //logWriter.log('Number ', err.message + '\n' + err.stack);
+                }
+                console.log('Numbers Unrented succefuly')
+            })
+        })
+    };
+
+    /*this.deleteUnrentNumbers = function() {
 
         var removeNumber;
         var date = new Date();
@@ -108,13 +148,14 @@ var Number = function (db) {
                             number: number.number
                         };
                         // todo uncomment lines below for running delete number through the PLIVO and insert deleting from database in callback
-                        /*p.unrent_number(removeNumber, function(err){
+                        *//*p.unrent_number(removeNumber, function(err){
                              if (err){
                              return callback(err);
                              }
-                         });*/
+                         });*//*
 
                         updatedUser = lodash.dropWhile(updatedUser, removeNumber);
+                        //console.log(updatedUser);
                     }
                     callback(null);
 
@@ -124,6 +165,7 @@ var Number = function (db) {
                     }
 
                     saveUser.numbers = updatedUser;
+                    console.log(saveUser.numbers);
                     saveUser.save(function (err) {
                         if (err) {
                             return logWriter.log('', err.message + '\n' + err.stack);
@@ -133,7 +175,7 @@ var Number = function (db) {
                 });
             });
         });
-    };
+    };*/
 };
 
 module.exports = Number;

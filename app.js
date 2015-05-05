@@ -87,6 +87,8 @@ mainDb.once( 'open', function callback() {
 
     io = sockets( server, {
         /*'store': new RedisSocketStore( redisObject )*/
+        /*pingTimeout: 1000,
+        destroyUpgradeTimeout: 1000*/
     } );
 
     server.listen( port, function () {
@@ -102,11 +104,8 @@ mainDb.once( 'open', function callback() {
 
         socket.emit('connectedToServer', {success: 'Success'});
         socket.on('publishMessage', function (data) {
-            console.log(data);
         });
         socket.on('authorize', function (data) {
-            console.log('Socket:');
-            console.log(data);
             data.socketId = socket.id;
             socketConnection.registerSocket(data);
         });

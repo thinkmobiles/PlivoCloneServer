@@ -5,6 +5,7 @@ var p = plivo.RestAPI( {
 } );
 var async = require( 'async' );
 var lodash = require( 'lodash' );
+var util = require('util');
 var SocketConnectionHandler = require( '../handlers/socketConnections' );
 
 var Message = function ( db, app ) {
@@ -155,6 +156,13 @@ var Message = function ( db, app ) {
         var msgPrice;
         var userObj;
         var countryIso;
+        var err;
+
+        if ( !(userObj && util.isArray(userObj.numbers) && userObj.numbers.length )  ) {
+            err = new Error('empty user ' + userObj.email);
+            err.status = 500;
+            return callback(err);
+        }
 
         userObj = userObject.toJSON();
         countryIso = lodash.findWhere(userObj.numbers, {number: src})['countryIso'];
