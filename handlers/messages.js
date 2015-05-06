@@ -384,6 +384,7 @@ var Message = function ( db, app ) {
                                 if (err){
                                     return next(err);
                                 }
+                                //TODO uncoment plivo
                                 /*p.send_message( params, function ( status, response ) {
                                     conversation.save(function(err){
                                         if (err){
