@@ -158,8 +158,8 @@ var Message = function ( db, app ) {
         var countryIso;
         var err;
 
-        if ( !(userObj && util.isArray(userObj.numbers) && userObj.numbers.length )  ) {
-            err = new Error('empty user ' + userObj.email);
+        if ( !(userObject && util.isArray(userObject.numbers) && userObject.numbers.length )  ) {
+            err = new Error('empty user ');
             err.status = 500;
             return callback(err);
         }
