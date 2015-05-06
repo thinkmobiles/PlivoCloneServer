@@ -384,7 +384,7 @@ var Message = function ( db, app ) {
                                 if (err){
                                     return next(err);
                                 }
-                                p.send_message( params, function ( status, response ) {
+                                /*p.send_message( params, function ( status, response ) {
                                     conversation.save(function(err){
                                         if (err){
                                             next(err);
@@ -392,7 +392,8 @@ var Message = function ( db, app ) {
                                             res.status( 200 ).send( {credits: updatedCredits} );
                                         }
                                     });
-                                });
+                                });*/
+                                res.status( 200 ).send( {credits: updatedCredits} );
                             });
 
 
