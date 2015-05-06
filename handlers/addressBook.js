@@ -452,16 +452,28 @@ var AddressBook = function(db) {
 
                         return callback(err);
 
-                    } else if ( !model && isNew ) {
+                    }
 
-                        model = new AddressBook( contactBody );
-                        model.refUser = userId;
-
-                    } else if ( model && isNew ){
+                    if ( model && isNew ){
 
                         err = new Error('contact name '+ contactBody.companion +' exist');
                         err.status = 409;
                         return callback( err );
+
+                    }
+
+                    if ( !model && !isNew ){
+
+                        err = new Error('contact name '+ contactBody.companion +' not found');
+                        err.status = 404;
+                        return callback( err );
+
+                    }
+
+                    if ( !model && isNew ) {
+
+                        model = new AddressBook( contactBody );
+                        model.refUser = userId;
 
                     } else {
 
