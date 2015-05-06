@@ -93,8 +93,8 @@ var Number = function (db) {
             length = userModel.numbers.length;
         }
         numbersNew = lodash.remove(userModel.numbers, function( number ){
-            var isOld =  number.expire < now;
-            if ( isOld ) {
+            var isOld =  number.expire > now;
+            if ( !isOld ) {
                 /*p.unrent_number(removeNumber, function(err){
                     if (err){
                         return callback(err);
@@ -102,9 +102,9 @@ var Number = function (db) {
                 });*/
                 logWriter.log('Number ' + number.number + ' is unrented')
             }
-
             return isOld;
         });
+        userModel.numbers = numbersNew;
         userModel.save( callback );
     }
 
