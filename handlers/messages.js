@@ -157,6 +157,7 @@ var Message = function ( db, app ) {
         var userObj;
         var countryIso;
         var err;
+        var number;
 
         if ( !(userObject && util.isArray(userObject.numbers) && userObject.numbers.length )  ) {
             err = new Error('empty user ');
@@ -164,8 +165,18 @@ var Message = function ( db, app ) {
             return callback(err);
         }
 
+
+
         userObj = userObject.toJSON();
-        countryIso = lodash.findWhere(userObj.numbers, {number: src})['countryIso'];
+        number = lodash.findWhere(userObj.numbers, {number: src});
+
+        if (!number ) {
+            err = new Error('bad source number');
+            err.status = 500;
+            return callback(err);
+        }
+
+        countryIso = number['countryIso'];
         countryIso = countryIso.toUpperCase();
 
         Price.findOne({countryIso: countryIso}, function(err, res){
