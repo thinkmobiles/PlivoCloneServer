@@ -126,7 +126,7 @@ var Buy = function (db) {
             });
         });
     }
-
+    //todo make return true false
     function isUsed( receiptId, callback ) {
         var findCond = {
             receiptId: receiptId
@@ -171,6 +171,7 @@ var Buy = function (db) {
     function getPackageCredits( appId, os, productId, callback ) {
         var findCondition;
         var err;
+
         switch ( os ) {
             case 'WINDOWS': {
                 findCondition = {
@@ -208,13 +209,15 @@ var Buy = function (db) {
     }
 
 
-    function saveHistory( appId, productId, receiptId, os, rawReceipt, callback ){
-        BuyHistory.insert();
+    function saveBuyToHistory( appId, productId, receiptId, os, rawReceipt, callback ){
+        var buyRecord = new BuyHistory
     }
 
     this.buy = function( req, res, next ) {
         var userId = req.session.uId;
         var receipt = req.body.receipt;
+        var os = req.body.provider || 'WINDOWS'; //TODO remove or
+
         receipt = receipt.replace('<?xml version="1.0"?>',"");
         //receipt = receipt1000;
         var err;
@@ -224,19 +227,70 @@ var Buy = function (db) {
             err.status = 400;
             return next( err )
         }
-        validateReceipt(receipt, 'WINDOWS', function( err, response ){
+
+        switch ( os ) {
+            case 'WINDOWS': {
+                validateReceipt( receipt, 'WINDOWS', function( err, response ){
+                    var appId;
+                    var productId;
+                    var os = 'WINDOWS';
+
+                    if (err) {
+                        return res.status(500).send(err.message);
+                    }
+                    appId = response[0].appId;
+                    productId = response[0].productId;
+
+                    getPackageCredits( appId, os, productId, function( err, credits ) {
+                        if ( err ) {
+                            return next( err );
+                        }
+
+                        addCredits( userId, credits, function (err, updatedUser ) {
+                            if (err) {
+                                return next( err );
+                            }
+                            res.status('200').send({ credits: updatedUser.credits })
+                        })
+
+                    } )
+                })
+            }
+                break;
+            case 'GOOGLE': {
+                // TODO change !!
+                addCredits( userId, 2000, function (err, updatedUser ) {
+                    if (err) {
+                        return next( err );
+                    }
+                    res.status('200').send({ credits: updatedUser.credits })
+                })
+            }
+                break;
+            default: {
+                err = new Error('platform not supported');
+                err.status = 404;
+                return next( err );
+            }
+                break;
+        }
+
+        /*validateReceipt(receipt, 'WINDOWS', function( err, response ){
             var appId;
             var productId;
             var os = 'WINDOWS';
+
             if (err) {
                 return res.status(500).send(err.message);
             }
             appId = response[0].appId;
             productId = response[0].productId;
+
             getPackageCredits( appId, os, productId, function( err, credits ) {
                 if ( err ) {
                     return next( err );
                 }
+
                 addCredits( userId, credits, function (err, updatedUser ) {
                     if (err) {
                         return next( err );
@@ -246,7 +300,7 @@ var Buy = function (db) {
 
             } )
         })
-
+*/
     };
 
 /*    this.createContryPrices = function (req, res, next ) {
