@@ -10,7 +10,7 @@ module.exports = function (db) {
     var session = new SessionHandler(db);
     var buy = new Buy(db);
 
-    router.post( '/', session.authenticatedUser, buy.buy );
+    router.post( '/', /*session.authenticatedUser,*/ buy.buy );
     //router.get('/', buy.createContryPrices ); // todo remove
     //router.post( '/', session.authenticatedUser, numbers.byNumber );
 
