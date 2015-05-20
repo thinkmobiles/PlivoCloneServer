@@ -275,6 +275,7 @@ var User = function ( db ) {
 
         delete options.password;
         delete options.email;
+        delete options.numbers;
 
         if( (Object.keys( options )).length ) {
             setObject = {
