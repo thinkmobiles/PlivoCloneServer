@@ -7,8 +7,9 @@ var newObjectId = mongoose.Types.ObjectId;
 var iap = require('../helpers/in-app-purchase');
 var xml = require('xml2js');
 
-
-iap.config({});
+iap.config({
+    applePassword: "c8f948446a0b4f1e94107ac48d4ad6fa"
+});
 
 var Buy = function (db) {
     var BuyHistory = db.model( 'buyHistory' );
@@ -17,6 +18,7 @@ var Buy = function (db) {
     var User = db.model('user');
 
     //todo remove test receip
+/*
     var receipt1 =
         '<?xml version="1.0"?><Receipt Version="1.0" ReceiptDate="2012-08-30T23:08:52Z" CertificateId="b809e47cd0110a4db043b3f73e83acd917fe1336" ReceiptDeviceId="4e362949-acc3-fe3a-e71b-89893eb4f528">' +
     '<ProductReceipt Id="6bbf4366-6fb2-8be8-7947-92fd5f683530" ProductId="Product1" PurchaseDate="2012-08-30T23:08:52Z" ExpirationDate="2012-09-02T23:08:49Z" ProductType="Durable" AppId="55428GreenlakeApps.CurrentAppSimulatorEventTest_z7q3q7z11crfr" />' +
@@ -54,6 +56,7 @@ var Buy = function (db) {
                 '<SignatureValue>jeoQA5t5UDviD3Pkv3Xf6k3KL37SK01g3jFzNkgZHrTFZxO6LlfBY2uz8rghjCQjibnFN8w4BiiPojdO6I2tYkdcKO7Wy3PxeyKqHYIWk5MaClkdo0qHQPMC/CXhtoJs0Br5UoeqciQf85mO61bQh04/eWJOX70MDXbapOb2jZim7tbZagZKqDYIHEWS7nYc5G9ObdhZUD5XIotqLFTtpwCzg6ISdsRdo4MmxumjDp/I6Vl4oicd98slH1Q03jaIS1+fvschu9QQ6BEM3spf/iHTPGKyvWk4/n+ABrOA+GG7+xPggXCVotd269uRSJ7gjn/o/1Y8/asoH2xQFKf2XA==</SignatureValue>' +
             '</Signature>' +
         '</Receipt>';
+*/
 
 
     function parseWindowsReceipt(receipt, callback){
@@ -96,6 +99,11 @@ var Buy = function (db) {
                 err = new Error('not implemented');
                 err.status = 400;
                 return callback( err );
+            }
+                break;
+
+            case 'APPLE': {
+                sellerType = iap.APPLE;
             }
                 break;
 
@@ -187,6 +195,13 @@ var Buy = function (db) {
                 };
             }
                 break;
+            case 'APPLE': {
+                findCondition = {
+                    "productId.apple": productId,
+                    "appId.apple": appId
+                };
+            }
+                break;
             default: {
                 err = new Error('platform not supported');
                 err.status = 404;
@@ -264,6 +279,34 @@ var Buy = function (db) {
                         return next( err );
                     }
                     res.status('200').send({ credits: updatedUser.credits })
+                })
+            }
+                break;
+            case 'APPLE': {
+                validateReceipt( receipt, 'APPLE', function( err, response ){
+                    var appId;
+                    var productId;
+                    var os = 'APPLE';
+
+                    if (err) {
+                        return res.status(500).send(err.message);
+                    }
+                    appId = response[0].appId;
+                    productId = response[0].productId;
+
+                    getPackageCredits( appId, os, productId, function( err, credits ) {
+                        if ( err ) {
+                            return next( err );
+                        }
+
+                        addCredits( userId, credits, function (err, updatedUser ) {
+                            if (err) {
+                                return next( err );
+                            }
+                            res.status('200').send({ credits: updatedUser.credits })
+                        })
+
+                    } )
                 })
             }
                 break;
