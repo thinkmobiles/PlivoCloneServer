@@ -10,11 +10,13 @@ module.exports = function( db ){
         name: String,
         productId: {
             windows: String,
-            google: String
+            google: String,
+            apple: String,
         },
         appId: {
             windows: String,
-            google: String
+            google: String,
+            apple: String
         },
         price: Number,
         credits: Number
