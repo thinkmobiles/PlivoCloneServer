@@ -11,8 +11,8 @@ module.exports = function ( db ) {
         chat: String,
         show: [String],
         read: {
-            type: Number,
-            default: 0
+            type: Boolean,
+            default: false
         },
         type: {
             type: String,
