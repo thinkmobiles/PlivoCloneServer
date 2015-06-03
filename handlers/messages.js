@@ -396,61 +396,6 @@ var Message = function ( db, app ) {
         res.status( 200 ).send();
     };
 
-    /*this.getConversations = function ( req, res, next ) {
-        var userId = req.session.uId;
-        var srcNumber = req.params.src;
-        var dstNumber = req.params.dst;
-        var limit = req.query.limit;
-        var type = 'userId';
-        var options = {
-            limit: limit
-        };
-
-        if( !dstNumber || !srcNumber ) {
-            options.userId = userId;
-        } else {
-            type = "number";
-            options.numbers = [dstNumber, srcNumber];
-        }
-
-        getConversationsByType( type, options, function ( err, conversations ) {
-            if( err ) {
-                next( err );
-            } else {
-                res.status( 200 ).send( {success: conversations} );
-            }
-        } );
-    };*/
-
-    /*this.getLastConversations = function ( req, res, next ) {
-        var userId = req.session.uId;
-        var ownerObject = {
-            matchId: userId,
-            groupType: 'owner'
-        };
-        var companionObject = {
-            matchId: userId,
-            groupType: 'companion'
-        };
-        var resultArray = [];
-        //async.each( [ownerObject, companionObject], function ( options, callback ) {
-        async.each( [ ownerObject ], function ( options, callback ) {
-            lastConvObjects( options, function ( err, result ) {
-                if( err ) {
-                    callback( err );
-                } else {
-                    resultArray = resultArray.concat( result );
-                    callback();
-                }
-            } );
-        }, function ( err ) {
-            if( err ) {
-                next( err );
-            } else {
-                res.status( 200 ).send( {success: resultArray} );
-            }
-        } );
-    };*/
 
     this.getConversations = function ( req, res, next ) {
         var userId = req.session.uId;
@@ -479,7 +424,6 @@ var Message = function ( db, app ) {
             show: {$in: [ userId ]}
         };
         projObj = {
-            /*"_id": 0,*/ //TODO test and remove
             chat: 0,
             show: 0,
             "__v": 0
@@ -524,7 +468,6 @@ var Message = function ( db, app ) {
             },
             {
                 $project: {
-                    /*"_id": 0,*/ //TODO test and remove
                     body: 1,
                     chat: 1,
                     owner: 1,
@@ -661,7 +604,15 @@ var Message = function ( db, app ) {
     /* get unread msg count for chat*/
     this.getUnReadCount = function( req, res, next ) {
         var userId = req.session.uId;
-        var chat = req.params.chat ;
+        var num1 = req.params.num1;
+        var num2 = req.params.num2;
+        var chat ;
+
+        if ( num1 > num2 ) {
+            chat = num2 + ':' + num1;
+        } else {
+            chat = num1 + ':' + num2;
+        }
 
         Conversation
             .find({
@@ -700,7 +651,7 @@ var Message = function ( db, app ) {
                 _id: { $in: readMsgs }
             },
             {
-                $set: { read: 1 }
+                $set: { read: true }
             },
             { multi: true }
             ).exec( function( err, result) {
