@@ -15,6 +15,7 @@ module.exports = function(app, db) {
     var user = new UserHandler(db);
     var push = require('./push')(db);
     var buy = require('./buy')(db);
+    var voiceMessages = require('./voiceMessages')(db);
 
 
     app.get( '/', function ( req, res, next ) {
@@ -34,6 +35,7 @@ module.exports = function(app, db) {
     app.use( '/addressbook', addressbook );
     app.use( '/push', push );
     app.use( '/buy', buy );
+    app.use( '/voiceMessages', voiceMessages );
 
 
     function notFound(req, res, next){
