@@ -11,7 +11,7 @@ module.exports = function(db, app) {
     var messages = new MessageHandler(db, app);
 
     router.post( '/send', session.authenticatedUser, messages.sendMessage );
-    router.get('/unread/:chat', session.authenticatedUser, messages.getUnReadCount );
+    router.get('/unread/:num1/:num2', session.authenticatedUser, messages.getUnReadCount );
     router.put('/read', session.authenticatedUser, messages.setRead );
     router.get( '/get/:message_uuid', session.authenticatedUser, messages.messageInfo );
     //router.get( '/lastConversations', session.authenticatedUser, messages.getLastConversations );
