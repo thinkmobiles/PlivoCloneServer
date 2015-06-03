@@ -19,49 +19,6 @@ var Message = function ( db, app ) {
     var socketConnection = new SocketConnectionHandler( db );
     var push = new Push( db );
 
-    /*function lastConvObjects( options, callback ) {
-        var matchId = options.matchId || null;
-        var groupType = options.groupType || 'companion';
-        var match;
-        var groupString;
-        var matchObject;
-        var sortObject;
-        var groupObject;
-        var projectionObject;
-        var matchString = (groupType === 'companion') ? "owner" : "companion";
-
-        matchString += "._id";
-        match = {};
-        match[matchString] = matchId;
-        groupString = "$" + groupType + "._id";
-
-        matchObject = {
-            $match: match
-        };
-
-        sortObject = {
-            $sort: {
-                "postedDate": -1
-            }
-        };
-
-        groupObject = {
-            $group: {
-                _id: groupString,
-                conversation: {
-                    $first: "$$ROOT"
-                }
-            }
-        };
-        projectionObject = {
-            $project: {
-                "conversation": 1
-            }
-        };
-
-        Conversation.aggregate( [matchObject, sortObject, groupObject, projectionObject] ).exec( callback );
-        //Conversation.aggregate( [matchObject, groupObject, sortObject, projectionObject] ).exec( callback );
-    }*/
 
     function lastConvObjects( options, callback ) {
         var matchId = options.matchId || null;
@@ -522,7 +479,7 @@ var Message = function ( db, app ) {
             show: {$in: [ userId ]}
         };
         projObj = {
-            "_id": 0,
+            /*"_id": 0,*/ //TODO test and remove
             chat: 0,
             show: 0,
             "__v": 0
@@ -567,7 +524,7 @@ var Message = function ( db, app ) {
             },
             {
                 $project: {
-                    "_id": 0,
+                    /*"_id": 0,*/ //TODO test and remove
                     body: 1,
                     chat: 1,
                     owner: 1,
@@ -615,7 +572,8 @@ var Message = function ( db, app ) {
         };
         var projectObj = {
             'show': 0
-        }
+        };
+
         AddressBook.find({refUser : newObjectId( userId )})
             .exec(function(err, entries){
                 if (err){
@@ -697,6 +655,61 @@ var Message = function ( db, app ) {
             }
             res.status(200).send({success: "Chat deleted successfully"});
         });
+    };
+
+
+    /* get unread msg count for chat*/
+    this.getUnReadCount = function( req, res, next ) {
+        var userId = req.session.uId;
+        var chat = req.params.chat ;
+
+        Conversation
+            .find({
+                chat: chat,
+                "companion._id": userId,
+                show: {
+                    $in: [ userId ]
+                },
+                read: false
+            })
+            .count()
+            .exec( function( err, unreadCount ) {
+                if ( err ) {
+                    return next( err );
+                }
+
+                res.status( 200 ).send({ success: 'unread count', chat: chat, count: unreadCount })
+            })
+    };
+
+    /* set messages as read
+    *  PUT
+    *  {
+    *       read: [ _id ]
+    *  }
+    *  */
+    this.setRead = function( req, res, next ) {
+        var userId = req.session.uId;
+        var body = req.body;
+        var readMsgs = body.read;
+
+        Conversation
+            .update(
+            {
+                "companion._id": userId,
+                _id: { $in: readMsgs }
+            },
+            {
+                $set: { read: 1 }
+            },
+            { multi: true }
+            ).exec( function( err, result) {
+                if ( err ) {
+                    return next( err );
+                }
+
+                res.status(201).send({success: 'massage is read'})
+            })
     };
 };
 

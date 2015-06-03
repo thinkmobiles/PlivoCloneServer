@@ -10,6 +10,19 @@ module.exports = function ( db ) {
         body: String,
         chat: String,
         show: [String],
+        read: {
+            type: Number,
+            default: 0
+        },
+        type: {
+            type: String,
+            default: "TEXT",
+            match: /^TEXT$|^VOICE&/i
+        },
+        voiceURL: {
+            type: String,
+            default:""
+        },
         owner: {
             _id: String,
             name: {
