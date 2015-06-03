@@ -10,6 +10,23 @@ module.exports = function (db) {
 
     router.post( '/plivo/inCall', function( req, res, next ) {
         var body = req.body;
+        console.log('Request to inCall:\n');
+        console.log( JSON.stringify(body) );
+
+        res.status(200).send( response1 );
+    });
+
+    router.post( '/plivo/answer', function( req, res, next ) {
+        var body = req.body;
+        console.log('Request to answer:\n');
+        console.log( JSON.stringify(body) );
+
+        res.status(200).send( response1 );
+    });
+
+    router.post( '/plivo/hangUp', function( req, res, next ) {
+        var body = req.body;
+        console.log('Request to hangUp:\n');
         console.log( JSON.stringify(body) );
 
         res.status(200).send( response1 );
