@@ -19,49 +19,6 @@ var Message = function ( db, app ) {
     var socketConnection = new SocketConnectionHandler( db );
     var push = new Push( db );
 
-    /*function lastConvObjects( options, callback ) {
-        var matchId = options.matchId || null;
-        var groupType = options.groupType || 'companion';
-        var match;
-        var groupString;
-        var matchObject;
-        var sortObject;
-        var groupObject;
-        var projectionObject;
-        var matchString = (groupType === 'companion') ? "owner" : "companion";
-
-        matchString += "._id";
-        match = {};
-        match[matchString] = matchId;
-        groupString = "$" + groupType + "._id";
-
-        matchObject = {
-            $match: match
-        };
-
-        sortObject = {
-            $sort: {
-                "postedDate": -1
-            }
-        };
-
-        groupObject = {
-            $group: {
-                _id: groupString,
-                conversation: {
-                    $first: "$$ROOT"
-                }
-            }
-        };
-        projectionObject = {
-            $project: {
-                "conversation": 1
-            }
-        };
-
-        Conversation.aggregate( [matchObject, sortObject, groupObject, projectionObject] ).exec( callback );
-        //Conversation.aggregate( [matchObject, groupObject, sortObject, projectionObject] ).exec( callback );
-    }*/
 
     function lastConvObjects( options, callback ) {
         var matchId = options.matchId || null;
@@ -713,7 +670,7 @@ var Message = function ( db, app ) {
                 show: {
                     $in: [ userId ]
                 },
-                read: 0
+                read: false
             })
             .count()
             .exec( function( err, unreadCount ) {
