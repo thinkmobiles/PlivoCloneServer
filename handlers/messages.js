@@ -700,7 +700,7 @@ var Message = function ( db, app ) {
                 _id: { $in: readMsgs }
             },
             {
-                $set: { read: 1 }
+                $set: { read: true }
             },
             { multi: true }
             ).exec( function( err, result) {
