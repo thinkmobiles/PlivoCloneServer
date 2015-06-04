@@ -21,6 +21,7 @@
     "mongodb": "^1.4.30",
     "mongoose": "3.8.3",
     "morgan": "~1.5.1",
+    "node-gcm": "^0.9.15",
     "plivo-node": "git://github.com/plivo/plivo-node.git",
     "serve-favicon": "~2.2.0",
     "socket.io": "^1.3.3",
