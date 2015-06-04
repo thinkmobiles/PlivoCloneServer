@@ -14,7 +14,7 @@ module.exports = function(db) {
     router.get('/form', session.authenticatedUser, voiceMessagesHandler.sendTestForm); //TODO: use only for tests, remove on production;
 
     router.post('/send', session.authenticatedUser, multipartMiddleware, voiceMessagesHandler.sendMessage);
-    router.get('/audio/:fileName', session.authenticatedUser, voiceMessagesHandler.getAudioFile);
+    router.get('/audio/:fileName', voiceMessagesHandler.getAudioFile);
     /*router.get('/answer/plivo', voiceMessagesHandler.answerPlivo);
     router.get('/answer/nexmo', voiceMessagesHandler.answerNexmo);*/
 
