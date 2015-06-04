@@ -28,13 +28,14 @@ module.exports = function (db) {
         res.status(200).send( response );
     });
 
-    router('/plivo/result/:from/:to', function ( req, res, next ) {
+    router.post('/plivo/result/:from/:to', function ( req, res, next ) {
         var from = req.params.from;
         var to = req.params.to;
 
-        console.log('Plivo inCall result:\n' + 'From: ' + from + '\n' + 'To: ' + to);
+        console.log('Plivo inbound result:\n' + 'From: ' + from + '\n' + 'To: ' + to);
         console.log( JSON.stringify( body ) );
 
+        res.status(200).send();
     });
 
     router.post( '/plivo/outbound', function( req, res, next ) {
