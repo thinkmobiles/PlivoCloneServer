@@ -25,7 +25,7 @@ module.exports = function (db) {
         console.log('Plivo inCall request:');
         console.log( JSON.stringify(body) );
 
-        res.status(200).send( response );
+        res.status(200).send( response.toXML() );
     });
 
     router.post('/plivo/result/:from/:to', function ( req, res, next ) {
@@ -47,7 +47,7 @@ module.exports = function (db) {
         console.log('Request to answer:\n');
         console.log( JSON.stringify(body) );
 
-        res.status(200).send( response );
+        res.status(200).send( response.toXML() );
     });
 
 
