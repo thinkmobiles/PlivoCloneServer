@@ -1,6 +1,7 @@
 /**
  * Created by Roman on 12.02.2015.
  */
+var CONVERSATION_TYPES = require('./../constants/conversationTypes');
 module.exports = function ( db ) {
     "use strict";
     var mongoose = require( 'mongoose' );
@@ -16,8 +17,9 @@ module.exports = function ( db ) {
         },
         type: {
             type: String,
-            default: "TEXT",
-            match: /^TEXT$|^VOICE&/i
+            default: CONVERSATION_TYPES.TEXT
+            /*default: "TEXT",
+            match: /^TEXT$|^VOICE&/i*/
         },
         voiceURL: {
             type: String,

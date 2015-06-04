@@ -30,14 +30,14 @@ var fileStorage = function () {
         try {
             fs.writeFile(filePath, fileData, function (err, data) {
                 if (callback && typeof callback === 'function') {
-                    callback(err)
+                    callback(null, data);
                 }
             });
         }
         catch (err) {
             console.log('ERROR:', err);
             if (callback && typeof callback === 'function') {
-                callback(err)
+                callback(err);
             }
         }
     };

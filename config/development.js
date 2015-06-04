@@ -1,6 +1,8 @@
 /**
  * Created by Roman on 11.02.2015.
  */
+process.env.HOST = 'http://134.249.164.53:8830';
+//process.env.HOST = 'http://localhost:8830';
 process.env.PLIVO_APP_ID = 14672593026521222;
 //process.env.DB_HOST = 'localhost';
 process.env.DB_HOST = '192.168.88.250';

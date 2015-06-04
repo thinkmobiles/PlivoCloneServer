@@ -95,10 +95,12 @@ mainDb.once( 'open', function callback() {
         console.log( 'Express start on port ' + port );
     } );
 
+    app.set('io', io);
+
     io.on('connection', function (socket) {
         var socketConnection;
 
-        app.set('io', io);
+        //app.set('io', io);
 
         socketConnection = new SocketConnection(mainDb);
 

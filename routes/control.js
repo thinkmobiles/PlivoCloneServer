@@ -4,9 +4,15 @@
 var express = require( 'express' );
 var plivo = require('plivo-node');
 var router = express.Router();
+var SessionHandler = require('../handlers/sessions');
+var VoiceMessagesHandler = require('../handlers/voiceMessages');
+var multipart = require('connect-multiparty');
+var multipartMiddleware = multipart();
+
 
 module.exports = function (db) {
-    var response1 = '<Response><Speak loop="2" voice="WOMAN">Welcom. This is a response from answer URL. Have a nice day</Speak></Response>'
+    var session = new SessionHandler(db);
+    var voiceMessagesHandler = new VoiceMessagesHandler(db);
 
     router.post( '/plivo/inbound', function( req, res, next ) {
         var response = plivo.Response();
@@ -38,7 +44,7 @@ module.exports = function (db) {
         res.status(200).send();
     });
 
-    router.post( '/plivo/outbound', function( req, res, next ) {
+    router.post( '/plivo/outbound', /*function( req, res, next ) {
         var response = plivo.Response();
         var body = req.body;
 
@@ -48,7 +54,7 @@ module.exports = function (db) {
         console.log( JSON.stringify(body) );
 
         res.status(200).send( response.toXML() );
-    });
+    }*/ voiceMessagesHandler.answerPlivo );
 
 
     router.post( '/plivo/hangup', function( req, res, next ) {
