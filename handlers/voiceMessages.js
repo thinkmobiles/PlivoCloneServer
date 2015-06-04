@@ -291,7 +291,7 @@ var VoiceMessagesModule = function (db) {
 
             //create Call
             function (cb) {
-                var answerUrl = process.env.HOST + '/voiceMessages/answer/plivo/?file=' + fileUrl;
+                var answerUrl = process.env.HOST + '/control/plivo/outbound/?file=' + fileUrl + '&uId=' + srcUserId.toString();
                 var callParams = {
                     from: src,
                     to: dst,
