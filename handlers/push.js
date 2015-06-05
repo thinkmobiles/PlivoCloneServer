@@ -6,8 +6,10 @@ var mongoose = require('mongoose');
 var newObjectId = mongoose.Types.ObjectId;
 var Wns = require('../helpers/wns');
 var async = require('async');
+var path = require('path');
 var wns = new Wns;
 var gcm = require('../helpers/gcm')('AIzaSyCon4JAMBlXEonuzKYLCO5PbOW3PjH_biU');
+var apn = require('../helpers/apns')(path.join("config/PseudoAPNSDev.p12"));
 
 var Push = function (db) {
     var self = this;
@@ -64,6 +66,19 @@ var Push = function (db) {
 
                     case 'GOOGLE': {
                         saveChannel( userId, channelURI, 'GOOGLE', function() {
+
+                            if ( err && err.code !== 11000 ) {
+                                err.status = 409;
+                                return next( err );
+                            }
+                            res.status( 200 ).send('channel saved');
+
+                        });
+                    }
+                        break;
+
+                    case 'APPLE': {
+                        saveChannel( userId, channelURI, 'APPLE', function() {
 
                             if ( err && err.code !== 11000 ) {
                                 err.status = 409;
@@ -135,6 +150,18 @@ var Push = function (db) {
 
                     case 'GOOGLE': {
                         gcm.sendPush( onePush.channelURI, msg, { from: src, to: dst }, function ( err, result) {
+                            if ( err ) {
+                                /*TODO remove*/
+                                return console.log( err.message );
+                            }
+                            console.log( result );
+                        });
+                        /*return;*/
+                    }
+                        break;
+
+                    case 'APPLE': {
+                        apn.sendPush( onePush.channelURI, msg, { payload: { from: src, to: dst } }, function ( err, result) {
                             if ( err ) {
                                 /*TODO remove*/
                                 return console.log( err.message );
