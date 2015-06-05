@@ -327,7 +327,7 @@ var VoiceMessagesModule = function (db) {
             //create call
             function (cb) {
                 //TODO: use helpers/plivo ...
-                
+
                 var answerUrl = process.env.HOST + '/control/plivo/outbound/?file=' + fileUrl + '&uId=' + srcUserId.toString();
                 var callParams = {
                     from: src,
@@ -339,7 +339,7 @@ var VoiceMessagesModule = function (db) {
                     var err;
 
                     if (status >= 200 && status < 300) {
-                        cb(null, response);
+                        cb();
                     } else {
                         err = new Error();
                         err.message = response.error || response.message;
