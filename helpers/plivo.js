@@ -23,7 +23,18 @@ module.exports = function() {
             type: 'sms'
         };
 
-        api.send_message( options, callback );
+        api.send_message( options, function ( status, response ) {
+            var err;
+
+            if (status >= 200 && status < 300) {
+                callback( null, response );
+            } else {
+                err = new Error();
+                err.message = response.error || response.message;
+                err.status = status;
+                callback( err );
+            }
+        } );
     };
 
     this.searchNumber = function ( params, callback ) {
@@ -40,12 +51,45 @@ module.exports = function() {
             offset: limit* ( page - 1 )
         };
 
-        api.search_phone_numbers( options, callback );
+        api.search_phone_numbers( options, function ( status, response ) {
+            var err;
+
+            if (status >= 200 && status < 300) {
+                callback( null, response );
+            } else {
+                err = new Error();
+                err.message = response.error || response.message;
+                err.status = status;
+                callback( err );
+            }
+        } );
     };
 
-    this.buyNumber = function (  ) {
+    this.buyNumber = function ( params, callback ) {
+        /*params = {
+            number: '+380667777777',
+            app_id: ""
+        };*/
+        var options = {
+            number: params.number
+        };
 
-        api.buy_phone_number(  )
+        if ( params && params.app_id ) {
+            options.app_id = params.app_id
+        }
+
+        api.buy_phone_number( options , function ( status, response ) {
+            var err;
+
+            if (status >= 200 && status < 300) {
+                callback( null, response );
+            } else {
+                err = new Error();
+                err.message = response.error || response.message;
+                err.status = status;
+                callback( err );
+            }
+        } )
     };
 
     this.createCall = function ( params, callback  ) {
@@ -54,6 +98,8 @@ module.exports = function() {
         var src = params.src;
         var dst = params.dst;
         var answerUrl = outCallXmlRoute + '?file=' + fileUrl + '&uId=' + srcUserId.toString();
+
+        /*TODO test and remove*/
         console.log( JSON.stringify(answerUrl) );
 
         var callParams = {
@@ -62,6 +108,7 @@ module.exports = function() {
             answer_url: answerUrl
         };
 
+        /*TODO test and remove*/
         console.log( JSON.stringify(callParams) );
 
         api.make_call( callParams, function ( status, response ) {

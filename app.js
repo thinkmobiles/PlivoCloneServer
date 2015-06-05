@@ -9,6 +9,10 @@ var sockets = require( 'socket.io' );
 var SchedulerHandler;
 var shedule;
 
+if ( ! process.env.NODE_ENV ) {
+    process.env.NODE_ENV = 'development';
+}
+
 
 app.use( function(req, res, next) {
     var browser = req.headers['user-agent'];
