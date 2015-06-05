@@ -7,6 +7,7 @@ var newObjectId = mongoose.Types.ObjectId;
 var Wns = require('../helpers/wns');
 var async = require('async');
 var wns = new Wns;
+var gcm = require('../helpers/gcm')('AIzaSyCon4JAMBlXEonuzKYLCO5PbOW3PjH_biU');
 
 var Push = function (db) {
     var self = this;
@@ -14,9 +15,9 @@ var Push = function (db) {
     var Push = db.model('push');
 
     //todo add unique index for channel exept null
-    function saveWinChannel( userId, channel, callback ) {
+    function saveChannel( userId, channel, provider, callback ) {
         var createObj = {
-            provider: 'WINDOWS',
+            provider: provider,
             channelURI: channel,
             refUser: newObjectId( userId )
         };
@@ -50,7 +51,7 @@ var Push = function (db) {
 
                 switch ( provider ) {
                     case 'WINDOWS': {
-                        saveWinChannel( userId, channelURI, function( err ) {
+                        saveChannel( userId, channelURI, 'WINDOWS', function( err ) {
                             if ( err && err.code !== 11000 ) {
                                 err = new Error('channel exist');
                                 err.status = 409;
@@ -62,8 +63,15 @@ var Push = function (db) {
                         break;
 
                     case 'GOOGLE': {
+                        saveChannel( userId, channelURI, 'GOOGLE', function() {
 
-                        res.status( 500 ).send('not implemented');
+                            if ( err && err.code !== 11000 ) {
+                                err.status = 409;
+                                return next( err );
+                            }
+                            res.status( 200 ).send('channel saved');
+
+                        });
                     }
                         break;
 
@@ -86,7 +94,20 @@ var Push = function (db) {
         }
     };
 
-    this.sendPush = function( userId, header, msg, launch  ) {
+    /*this.sendPush = function( userId, header, dstNumber, msg, launch  ) {*/
+    this.sendPush = function( params ) {
+
+        /*var pushParams = {
+            toUser: sendToUserId,
+            src: params.src,
+            dst: params.dst,
+            msg: body
+        };*/
+        var userId = params.toUser;
+        var src = params.src;
+        var dst = params.dst;
+        var msg = params.msg;
+
 
         Push.find( { refUser: newObjectId( userId )  }, function( err, pushChannels ) {
 
@@ -100,12 +121,11 @@ var Push = function (db) {
                 switch ( onePush.provider ) {
                     case 'WINDOWS': {
 
-                        wns.sendPush( onePush.channelURI, header, msg, launch, function (err) {
+                        wns.sendPush( onePush.channelURI, src, msg, JSON.stringify( { dst: dst, src: src } ), function (err) {
                             if ( err  && ( (err === 410) || (err === 404) ) ) {
                                 onePush.remove( function( err, result ){
                                     if ( err ) {
-                                        //return callback( err );
-                                        return callback(null);
+                                        return console.log( err.message );
                                     }
                                 })
                             }
@@ -114,7 +134,14 @@ var Push = function (db) {
                         break;
 
                     case 'GOOGLE': {
-                        return;
+                        gcm.sendPush( onePush.channelURI, msg, { from: src, to: dst }, function ( err, result) {
+                            if ( err ) {
+                                /*TODO remove*/
+                                return console.log( err.message );
+                            }
+                            console.log( result );
+                        });
+                        /*return;*/
                     }
                         break;
 
