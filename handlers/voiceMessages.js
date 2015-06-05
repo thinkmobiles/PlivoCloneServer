@@ -326,27 +326,29 @@ var VoiceMessagesModule = function (db) {
 
             //create call
             function (cb) {
-                /*var answerUrl = process.env.HOST + '/control/plivo/outbound/?file=' + fileUrl + '&uId=' + srcUserId.toString();
-                 var callParams = {
-                 from: src,
-                 to: dst,
-                 answer_url: answerUrl
-                 };
+                //TODO: use helpers/plivo ...
+                
+                var answerUrl = process.env.HOST + '/control/plivo/outbound/?file=' + fileUrl + '&uId=' + srcUserId.toString();
+                var callParams = {
+                    from: src,
+                    to: dst,
+                    answer_url: answerUrl
+                };
 
-                 plivoAPI.make_call(callParams, function (status, response) {
-                 var err;
+                plivoAPI.make_call(callParams, function (status, response) {
+                    var err;
 
-                 if (status >= 200 && status < 300) {
-                 cb(null, response);
-                 } else {
-                 err = new Error();
-                 err.message = response.error || response.message;
-                 err.status = status;
-                 cb(err);
-                 }
-                 });*/
+                    if (status >= 200 && status < 300) {
+                        cb(null, response);
+                    } else {
+                        err = new Error();
+                        err.message = response.error || response.message;
+                        err.status = status;
+                        cb(err);
+                    }
+                });
 
-                cb();
+                //cb();
             },
 
             //save conversation:
