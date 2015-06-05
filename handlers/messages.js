@@ -278,7 +278,7 @@ var Message = function ( db, app ) {
                                             };
 
                                             var pushParams = {
-                                                toUser: sendToUserId,
+                                                toUser: sendToUserId.toString(),
                                                 src: params.src,
                                                 dst: params.dst,
                                                 msg: body
