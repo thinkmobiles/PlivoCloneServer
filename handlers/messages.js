@@ -462,9 +462,99 @@ var Message = function ( db, app ) {
         var page = parseInt(req.query.p) || 1;
         var skip = (page -1) * limit;
 
-        function test() {}
+        function lastByChats( userId, limit, skip, callback ) {
 
-        Conversation.aggregate([
+            Conversation.aggregate([
+                {
+                    $match:{
+                        $or:[
+                            { "companion._id": userId },
+                            {"owner._id": userId }
+                        ],
+                        show: {
+                            $in: [userId]
+                        }
+                    }
+                },
+                {
+                    $sort: { postedDate: -1 }
+                },
+                {
+                    $project: {
+                        body: 1,
+                        chat: 1,
+                        owner: 1,
+                        companion: 1,
+                        postedDate: 1
+                    }
+                },
+                {
+                    $group:{
+                        _id: "$chat",
+                        lastmessage: {
+                            $first:"$$ROOT"
+                        }
+                    }
+                },
+                {
+                    $sort: { "lastmessage.postedDate": -1 }
+                },
+                {
+                    $skip: skip
+                },
+                {
+                    $limit: limit
+                }
+            ], callback )
+        }
+
+        function getUnreadCount( userId, chat, callback ) {
+            Conversation
+                .find({
+                    chat: chat,
+                    "companion._id": userId,
+                    show: {
+                        $in: [ userId ]
+                    },
+                    read: false
+                })
+                .count()
+                .exec( callback )
+        }
+
+        async.waterfall([
+            async.apply( lastByChats, userId, limit, skip ),
+
+            function ( lastChatMsgs, callback ) {
+
+                async.map(
+                    lastChatMsgs,
+                    function ( oneMsgModel, callback ) {
+                        if (! oneMsgModel || ! oneMsgModel._id ) {
+                            return callback( null, oneMsgModel )
+                        }
+                        getUnreadCount( userId, oneMsgModel._id, function( err, count) {
+                            console.log(oneMsgModel.chat, count);
+                            if ( err ) {
+                                return callback( null, oneMsgModel )
+                            }
+                            oneMsgModel.unread = count;
+                            callback( null, oneMsgModel );
+                        } )
+                    },
+                    callback
+                )
+
+            }
+        ], function ( err, docs ) {
+            if ( err ) {
+                return next(err);
+            }
+
+            res.status( 200 ).send( docs );
+        });
+
+        /*Conversation.aggregate([
             {
                 $match:{
                     $or:[
@@ -512,7 +602,7 @@ var Message = function ( db, app ) {
             }
 
             res.status( 200 ).send( docs );
-        })
+        })*/
 
     };
 
