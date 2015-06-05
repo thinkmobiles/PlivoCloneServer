@@ -266,13 +266,15 @@ var VoiceMessagesModule = function (db) {
 
             //send push notification:
             function (conversationModel, cb) {
-                var launchMsg = {
+                var pushParams = {
+                    toUser: dstUserId.toString(),
                     src: src,
-                    dst: dst
+                    dst: dst,
+                    msg: 'You received a voice message. Link ' + fileUrl
                 };
 
                 if (companion && companion.enablepush) {
-                    pushHandler.sendPush(dstUserId.toString(), src, conversationModel.voiceURL, JSON.stringify(launchMsg));
+                    pushHandler.sendPush(pushParams);
                 }
 
                 cb(null, conversationModel);
