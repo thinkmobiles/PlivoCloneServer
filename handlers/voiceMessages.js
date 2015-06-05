@@ -5,6 +5,9 @@ var DEFAULT_AUDIO_FILE_NAME = 'voiceMessage';
 var DEFAULT_AUDIO_EXTENSION = '.mp3';
 var DEFAULT_AUDIO_URL = 'voiceMessages/audio/';
 var CONVERSATION_TYPES = require('./../constants/conversationTypes');
+var EXTERNAL_USER_ID = '123456789';
+var EXTERNAL_USER_FIRST_NAME = 'Anonymous';
+var EXTERNAL_USER_LAST_NAME = 'Anonymous';
 
 var fs = require('fs');
 var plivo = require('plivo-node');
@@ -20,15 +23,21 @@ var FileStorage = require('../modules/fileStorage');
 var PushHandler = require('../handlers/push');
 var SocketConnectionHandler = require('../handlers/socketConnections');
 var UserHandler = require('../handlers/users');
+var MessagesHandler = require('../handlers/messages');
 
 var VoiceMessagesModule = function (db) {
     var fileStor = new FileStorage();
     var socketConnection = new SocketConnectionHandler(db);
     var userHandler = new UserHandler(db);
     var pushHandler = new PushHandler(db);
+    var messagesHandler = new MessagesHandler(db);
     var AddressBook = db.model('addressbook');
     var Conversation = db.model('converstion');
     var self = this;
+
+    this.saveExternalConversation = function (params, callback) {
+
+    };
 
     this.checkBlockedNumbers = function (params, callback) {
         var criteria = {
@@ -79,7 +88,7 @@ var VoiceMessagesModule = function (db) {
         html += '<h2>Test Form to send VoiceMessages</h2>';
         html += '<form method="POST" action="send" enctype="multipart/form-data">';
         html += '<label for="src">src</label>';
-        html += '<input type="text" name="src" value="380936610051"/>';
+        html += '<input type="text" name="src" value="+447441910183"/>';
         html += '<br>';
         html += '<label for="dst">dst</label>';
         html += '<input type="text" name="dst" value="+19192751968"/>';
@@ -210,12 +219,19 @@ var VoiceMessagesModule = function (db) {
                  cb(null, savedModel);
                  });*/
                 cb(null, conversationModel);
-
             },
 
             //subtract credits:
             function (conversationModel, cb) {
-                cb(null, conversationModel); //TODO: ...
+                var isInternal = true;
+
+                messagesHandler.subCredits(srcUser, isInternal, src, function (err, updatedCredits) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    credits = updatedCredits;
+                    cb(null, conversationModel);
+                });
             },
 
             //send socket notification:
@@ -255,20 +271,27 @@ var VoiceMessagesModule = function (db) {
                     dst: dst
                 };
 
-                //TODO: uncomment
-                /*if (companion && companion.enablepush) {
-                 pushHandler.sendPush(dstUserId.toString(), src, conversationModel.voiceURL, JSON.stringify(launchMsg));
-                 }*/
+                if (companion && companion.enablepush) {
+                    pushHandler.sendPush(dstUserId.toString(), src, conversationModel.voiceURL, JSON.stringify(launchMsg));
+                }
 
                 cb(null, conversationModel);
             }
 
-        ], function (err, result) {
+        ], function (err, conversation) {
+            var result;
+
             if (err) {
                 if (callback && (typeof callback === 'function')) {
                     callback(err);
                 }
             } else {
+
+                result = {
+                    conversation: conversation,
+                    credits: credits
+                };
+
                 if (callback && (typeof callback === 'function')) {
                     callback(null, result);
                 }
@@ -281,43 +304,111 @@ var VoiceMessagesModule = function (db) {
         //TODO: validate incoming params;
         var src = params.src;
         var dst = params.dst;
-        var dstUser = params.dstUser;
         var srcUser = params.srcUser;
         var fileUrl = params.fileUrl;
         var srcUserId = srcUser._id;
-        //var serviceProvider = 'plivo'; //TODO: ...
+        var chat;
+        var credits;
+
+        if (src > dst) {
+            chat = dst + ':' + src;
+        } else {
+            chat = src + ':' + dst;
+        }
 
         async.waterfall([
 
-            //create Call
+            //check credits:
             function (cb) {
-                var answerUrl = process.env.HOST + '/control/plivo/outbound/?file=' + fileUrl + '&uId=' + srcUserId.toString();
-                var callParams = {
-                    from: src,
-                    to: dst,
-                    answer_url: answerUrl
+                //TODO: ...
+                cb();
+            },
+
+            //create call
+            function (cb) {
+                /*var answerUrl = process.env.HOST + '/control/plivo/outbound/?file=' + fileUrl + '&uId=' + srcUserId.toString();
+                 var callParams = {
+                 from: src,
+                 to: dst,
+                 answer_url: answerUrl
+                 };
+
+                 plivoAPI.make_call(callParams, function (status, response) {
+                 var err;
+
+                 if (status >= 200 && status < 300) {
+                 cb(null, response);
+                 } else {
+                 err = new Error();
+                 err.message = response.error || response.message;
+                 err.status = status;
+                 cb(err);
+                 }
+                 });*/
+
+                cb();
+            },
+
+            //save conversation:
+            function (cb) {
+                var conversationData = {
+                    type: CONVERSATION_TYPES.VOICE,
+                    voiceURL: fileUrl,
+                    chat: chat,
+                    owner: {
+                        _id: srcUserId,
+                        name: {
+                            first: srcUser.name.first,
+                            last: srcUser.name.last
+                        },
+                        number: src
+                    },
+                    companion: {
+                        _id: EXTERNAL_USER_ID,
+                        name: {
+                            first: EXTERNAL_USER_FIRST_NAME,
+                            last: EXTERNAL_USER_LAST_NAME
+                        },
+                        number: dst
+                    },
+                    show: [srcUserId, EXTERNAL_USER_ID]
                 };
+                var conversationModel = new Conversation(conversationData);
 
-                plivoAPI.make_call(callParams, function (status, response) {
-                    var err;
-
-                    if (status >= 200 && status < 300) {
-                        cb(null, response);
-                    } else {
-                        err = new Error();
-                        err.message = response.error || response.message;
-                        err.status = status;
-                        cb(err);
+                conversationModel.save(function (err, savedModel) {
+                    if (err) {
+                        return cb(err);
                     }
+                    cb(null, savedModel);
+                });
+            },
+
+            //subtract credits:
+            function (conversationModel, cb) {
+                var isInternal = false;
+
+                messagesHandler.subCredits(srcUser, isInternal, src, function (err, updatedCredits) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    credits = updatedCredits;
+                    cb(null, conversationModel);
                 });
             }
 
-        ], function (err, result) {
+        ], function (err, conversation) {
+            var result;
+
             if (err) {
                 if (callback && (typeof callback === 'function')) {
                     callback(err);
                 }
             } else {
+                result = {
+                    conversation: conversation,
+                    credits: credits
+                };
+
                 if (callback && (typeof callback === 'function')) {
                     callback(null, result);
                 }
@@ -331,7 +422,6 @@ var VoiceMessagesModule = function (db) {
         var params = req.body;
         var dst = params.dst;
         var src = params.src;
-        //var isInternal;
 
         if (!req.files || !req.files.message) {
             err = new Error();
@@ -405,14 +495,14 @@ var VoiceMessagesModule = function (db) {
                         if (err) {
                             return next(err);
                         }
-                        res.status(201).send({success: true, result: result});
+                        res.status(201).send({success: 'message created', credits: result.credits});
                     });
                 } else {
                     self.sendExternalMessage(sendMessageParams, function (err, result) {
                         if (err) {
                             return next(err);
                         }
-                        res.status(201).send({success: true, result: result});
+                        res.status(201).send({success: 'message created', credits: result.credits});
                     });
                 }
 
