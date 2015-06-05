@@ -94,7 +94,20 @@ var Push = function (db) {
         }
     };
 
-    this.sendPush = function( userId, header, msg, launch  ) {
+    /*this.sendPush = function( userId, header, dstNumber, msg, launch  ) {*/
+    this.sendPush = function( params ) {
+
+        /*var pushParams = {
+            toUser: sendToUserId,
+            src: params.src,
+            dst: params.dst,
+            msg: body
+        };*/
+        var userId = params.toUser;
+        var src = params.src;
+        var dst = params.dst;
+        var msg = params.msg;
+
 
         Push.find( { refUser: newObjectId( userId )  }, function( err, pushChannels ) {
 
@@ -108,7 +121,7 @@ var Push = function (db) {
                 switch ( onePush.provider ) {
                     case 'WINDOWS': {
 
-                        wns.sendPush( onePush.channelURI, header, msg, launch, function (err) {
+                        wns.sendPush( onePush.channelURI, src, msg, JSON.stringify( { dst: dst, src: src } ), function (err) {
                             if ( err  && ( (err === 410) || (err === 404) ) ) {
                                 onePush.remove( function( err, result ){
                                     if ( err ) {
@@ -121,7 +134,7 @@ var Push = function (db) {
                         break;
 
                     case 'GOOGLE': {
-                        gcm.sendPush( onePush.channelURI, msg, function ( err, result) {
+                        gcm.sendPush( onePush.channelURI, msg, { from: src, to: dst }, function ( err, result) {
                             if ( err ) {
                                 /*TODO remove*/
                                 return console.log( err.message );

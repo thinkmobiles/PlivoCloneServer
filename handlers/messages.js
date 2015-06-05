@@ -274,6 +274,14 @@ var Message = function ( db, app ) {
                                                 src: params.src,
                                                 dst: params.dst
                                             };
+
+                                            var pushParams = {
+                                                toUser: sendToUserId,
+                                                src: params.src,
+                                                dst: params.dst,
+                                                msg: body
+                                            };
+
                                             if (err){
                                                 return next(err);
                                             }
@@ -301,7 +309,8 @@ var Message = function ( db, app ) {
                                             }
                                             // todo move status check to sendPush
                                             if ( companion &&  companion.enablepush ) {
-                                                push.sendPush( sendToUserId.toString(), params.src, conversation.body, JSON.stringify( launchMsg ));
+                                                //push.sendPush( sendToUserId.toString(), params.src, params.dst, conversation.body, JSON.stringify( launchMsg ));
+                                                push.sendPush( pushParams );
                                             };
 
                                             res.status(201).send({credits: updatedCredits});
@@ -450,6 +459,8 @@ var Message = function ( db, app ) {
         var limit = parseInt(req.query.l) || 20;
         var page = parseInt(req.query.p) || 1;
         var skip = (page -1) * limit;
+
+        function test() {}
 
         Conversation.aggregate([
             {

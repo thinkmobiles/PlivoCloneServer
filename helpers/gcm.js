@@ -13,9 +13,9 @@ module.exports = (function () {
 
         function sendPush( registartionIds, msg, options) {
             var sendingMessageObject = {};
-            var rabbit = app.get( 'rabbit' );
 
             sendingMessageObject.text = msg;
+
 
             if( options && options.payload && typeof options.payload === 'object' && Object.keys( options.payload ).length ) {
                 sendingMessageObject.payload = options.payload;
@@ -28,6 +28,14 @@ module.exports = (function () {
                 sendingMessageObject.sound = options.sound;
             }
 
+            if( options && options.from ) {
+                sendingMessageObject.sender = options.from;
+            }
+
+            if( options && options.to ) {
+                sendingMessageObject.receiver = options.to;
+            }
+
             if( options.expirationDate ) {
                 var now = Math.floor( Date.now() / 1000 );
                 var timeToLive = options.expirationDate - now;
@@ -37,7 +45,7 @@ module.exports = (function () {
             }
 
             message.addDataWithObject( sendingMessageObject );
-
+            console.log(message);
             sender.send( message, registartionIds, 4, function ( err, result ) {
                 console.log( '*********************Result GOOGLE**************************' );
                 console.dir( result );
