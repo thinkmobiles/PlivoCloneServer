@@ -165,6 +165,8 @@ var Message = function ( db, app ) {
         });
     }
 
+    this.subCredits = subCredits;
+
     this.sendMessage = function ( req, res, next ) {
         /* var params = {
          'src': '15702217824',
