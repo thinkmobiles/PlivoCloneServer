@@ -10,20 +10,22 @@ var EXTERNAL_USER_FIRST_NAME = 'Anonymous';
 var EXTERNAL_USER_LAST_NAME = 'Anonymous';
 
 var fs = require('fs');
-var plivo = require('plivo-node');
-var plivoAPI = plivo.RestAPI({
-    "authId": process.env.PLIVO_AUTH_ID,
-    "authToken": process.env.PLIVO_AUTH_TOKEN
-});
+/*var plivo = require('plivo-node');
+ var plivoAPI = plivo.RestAPI({
+ "authId": process.env.PLIVO_AUTH_ID,
+ "authToken": process.env.PLIVO_AUTH_TOKEN
+ });*/
 var async = require('async');
 var path = require('path');
 var lodash = require('lodash');
 var util = require('util');
+var request = require('request');
 var FileStorage = require('../modules/fileStorage');
 var PushHandler = require('../handlers/push');
 var SocketConnectionHandler = require('../handlers/socketConnections');
 var UserHandler = require('../handlers/users');
 var MessagesHandler = require('../handlers/messages');
+var PlivoModule = require('../helpers/plivo');
 
 var VoiceMessagesModule = function (db) {
     var fileStor = new FileStorage();
@@ -33,11 +35,8 @@ var VoiceMessagesModule = function (db) {
     var messagesHandler = new MessagesHandler(db);
     var AddressBook = db.model('addressbook');
     var Conversation = db.model('converstion');
+    var plivo = new PlivoModule();
     var self = this;
-
-    this.saveExternalConversation = function (params, callback) {
-
-    };
 
     this.checkBlockedNumbers = function (params, callback) {
         var criteria = {
@@ -87,14 +86,16 @@ var VoiceMessagesModule = function (db) {
         html += '<!doctype html>';
         html += '<h2>Test Form to send VoiceMessages</h2>';
         html += '<form method="POST" action="send" enctype="multipart/form-data">';
-        html += '<label for="src">src</label>';
+        html += '<label for="src">src </label>';
         html += '<input type="text" name="src" value="+447441910183"/>';
         html += '<br>';
-        html += '<label for="dst">dst</label>';
-        html += '<input type="text" name="dst" value="+19192751968"/>';
+        html += '<label for="dst">dst </label>';
+        //html += '<input type="text" name="dst" value="19192751968"/>';
+        //html += '<input type="text" name="dst" value="80936610051"/>';
+        html += '<input type="text" name="dst" value="+3614088916"/>';
         html += '<br>';
-        html += '<label for="message">Message</label>';
-        html += '<input type="file" name="message" />';
+        html += '<label for="voiceMsgFile">Voice message file </label>';
+        html += '<input type="file" name="voiceMsgFile" />';
         html += '<br>';
         html += '<input type="submit"/>';
         html += '</form>';
@@ -328,29 +329,19 @@ var VoiceMessagesModule = function (db) {
 
             //create call
             function (cb) {
-                //TODO: use helpers/plivo ...
-
-                var answerUrl = process.env.HOST + '/control/plivo/outbound/?file=' + fileUrl + '&uId=' + srcUserId.toString();
                 var callParams = {
-                    from: src,
-                    to: dst,
-                    answer_url: answerUrl
+                    srcUser: srcUser,
+                    src: src,
+                    dst: dst,
+                    fileUrl: fileUrl
                 };
 
-                plivoAPI.make_call(callParams, function (status, response) {
-                    var err;
-
-                    if (status >= 200 && status < 300) {
-                        cb();
-                    } else {
-                        err = new Error();
-                        err.message = response.error || response.message;
-                        err.status = status;
-                        cb(err);
+                plivo.createCall(callParams, function (err, result) {
+                    if (err) {
+                        return cb(err);
                     }
+                    cb();
                 });
-
-                //cb();
             },
 
             //save conversation:
@@ -427,9 +418,9 @@ var VoiceMessagesModule = function (db) {
         var dst = params.dst;
         var src = params.src;
 
-        if (!req.files || !req.files.message) {
+        if (!req.files || !req.files.voiceMsgFile) {
             err = new Error();
-            err.message = NOT_ENAUGH_PARAMS + '"message" was undefined';
+            err.message = NOT_ENAUGH_PARAMS + '"voiceMsgFile" was undefined';
             err.status = 400;
 
             return next(err);
@@ -472,7 +463,7 @@ var VoiceMessagesModule = function (db) {
 
                 //save the audio file:
                 fileUrl: function (cb) {
-                    var file = req.files.message;
+                    var file = req.files.voiceMsgFile;
 
                     saveTheAudioFile(file, function (err, result) {
                         if (err) {
@@ -529,17 +520,106 @@ var VoiceMessagesModule = function (db) {
     };
 
     this.answerPlivo = function (req, res, next) {
-        var response = plivo.Response();
         var fileUrl = req.query.file;
+        var xml = plivo.generatePlayXML(fileUrl);
 
-        response.addPlay(fileUrl);
+        res.status(200).send(xml);
+    };
 
-        res.status(200).send(response.toXML());
+    this.inboundPlivo = function (req, res, next) {
+        var body = req.body;
+        var xml = plivo.generateRecordXML(body.From, body.To);
+
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('Plivo inCall request:');
+            console.dir(JSON.stringify(body));
+        }
+
+        res.status(200).send(xml);
+    };
+
+    this.plivoRecordCallback = function (req, res, next) {
+        var handleError = function (err) {
+            if (process.env.NODE_ENV !== 'production') {
+                console.log(err);
+            }
+
+            if (next) {
+                return next(err);
+            }
+        };
+        var from = req.params.from;
+        var to = req.params.to;
+        var body = req.body;
+        var plivoFileUrl = body.RecordUrl;
+        var err;
+
+        //res.status(200).send({success: true});
+
+        if (!from || !to || !plivoFileUrl) {
+            err = new Error();
+            err.message = NOT_ENAUGH_PARAMS + '. Required params: "from", "to", "fileUrl".';
+            err.status = 400;
+            return handleError(err, next);
+        }
+
+        async.waterfall([
+
+            //download the audio file:
+            function (cb) {
+                var ticks = new Date().valueOf();
+                var dirPath = path.join(path.dirname(require.main.filename), 'uploads');
+                var fileName = DEFAULT_AUDIO_FILE_NAME + '_' + ticks + DEFAULT_AUDIO_EXTENSION;
+                var fileUrl = process.env.HOST + '/' + DEFAULT_AUDIO_URL + fileName;
+                var filePath = path.join(dirPath, fileName);
+
+                request(plivoFileUrl)
+                    .pipe(fs.createWriteStream(filePath, function (err) {
+                        if (err) {
+                            return cb(err);
+                        }
+                        console.log('>>> file %s was saved' , fileName);
+                        cb(null, fileUrl);
+                    }));
+
+                cb(null, fileUrl);
+            },
+
+            //insert into conversations:
+            function (fileUrl, cb) {
+                cb(null, null);
+            },
+
+            //send notification
+            function (conversationModel, cb) {
+                cb();
+            }
+
+        ], function (err) {
+            //TODO: request was send !!!
+            if (err) {
+                return handleError(err, next);
+            }
+            res.status(200).send({success: true});
+        });
+
+    };
+
+    this.plivoHangup = function (req, res, next) {
+        var body = req.body;
+
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('Request to hangUp:\n');
+            console.log(JSON.stringify(body));
+        }
+
+        res.status(200).send();
     };
 
     this.answerNexmo = function (req, res, next) {
         res.status(500).send({error: 'Not implemented yet'})
     };
+
 };
 
 module.exports = VoiceMessagesModule;

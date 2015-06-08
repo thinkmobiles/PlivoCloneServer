@@ -3,9 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node app.js"
   },
   "dependencies": {
+    "apn": "^1.7.4",
     "async": "^0.9.0",
     "body-parser": "~1.10.2",
     "connect-multiparty": "^1.2.5",
@@ -24,6 +25,7 @@
     "morgan": "~1.5.1",
     "node-gcm": "^0.9.15",
     "plivo-node": "git://github.com/plivo/plivo-node.git",
+    "request": "^2.57.0",
     "serve-favicon": "~2.2.0",
     "socket.io": "^1.3.3",
     "underscore": "^1.7.0",
