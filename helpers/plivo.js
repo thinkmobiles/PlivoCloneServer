@@ -6,7 +6,7 @@ var api = plivo.RestAPI( {
     "authId": process.env.PLIVO_AUTH_ID || "MAYTRKODM5Y2ZINDVLOT",
     "authToken": process.env.PLIVO_AUTH_TOKEN ||"ZDNhZjZmYTZiZWU3NzJjNGZkOWYyMmY0YTA3ZGZk"
 } );
-var outCallXmlRoute = process.env.HOST || 'http://134.249.164.53:8830' + '/control/plivo/outbound/';
+var outCallXmlRoute = process.env.HOST + '/control/plivo/outbound/';
 
 
 module.exports = function() {
@@ -129,6 +129,29 @@ module.exports = function() {
                 callback( err );
             }
         })
+    };
+
+    this.generatePlayXML = function (fileUrl) {
+        var response = plivo.Response();
+
+        response.addPlay(fileUrl);
+
+        return response.toXML();
+    };
+
+    this.generateRecordXML = function (from, to) {
+        var response = plivo.Response();
+
+        response.addRecord({
+            action: process.env.HOST + '/control/plivo/result/' + from + '/' + to,
+            method: 'POST',
+            fileFormat: 'mp3',
+            maxLength: 10,
+            playBeep: true,
+            recordSession: true
+        });
+
+        return response.toXML();
     };
 
 };
