@@ -19,96 +19,6 @@ var Message = function ( db, app ) {
     var socketConnection = new SocketConnectionHandler( db );
     var push = new Push( db );
 
-
-    function lastConvObjects( options, callback ) {
-        var matchId = options.matchId || null;
-        var groupType = options.groupType || 'companion';
-        var match;
-        var groupString;
-        var matchObject;
-        var sortObject;
-        var groupObject;
-        var projectionObject;
-        var matchString = (groupType === 'owner') ? "owner" : "companion";
-
-        matchString += "._id";
-        match = {};
-        match[matchString] = matchId;
-        groupString = "$companion.number";
-
-        matchObject = {
-            $match: match
-        };
-
-        sortObject = {
-            $sort: {
-                "postedDate": -1
-            }
-        };
-
-        groupObject = {
-            $group: {
-                _id: groupString,
-                conversation: {
-                    $first: "$$ROOT"
-                }
-            }
-        };
-        projectionObject = {
-            $project: {
-                "conversation": 1
-            }
-        };
-
-        Conversation.aggregate( [matchObject, sortObject, groupObject, projectionObject] ).exec( callback );
-    }
-
-    function getConversationsByType( type, options, callback ) {
-        var query;
-        var projectionObject;
-        var numbers;
-        var optionsObject;
-        var limit = options.limit || 50;
-        var userId = options.userId;
-        var dstNumber = ( options.numbers ) ? options.numbers[0] : null;
-        var srcNumber = ( options.numbers ) ? options.numbers[1] : null;
-
-        if( type === 'userId' ) {
-            query = {
-                $or: [
-                    {"owner._id": userId},
-                    {"companion._id": userId}
-                ]
-            };
-        } else {
-            query = {
-                $or: [
-                    {
-                        "owner.number": srcNumber,
-                        "companion.number": dstNumber
-                    },
-                    {
-                        "owner.number": dstNumber,
-                        "companion.number": srcNumber
-                    }
-                ]
-            };
-        }
-
-        projectionObject = {
-            _id: 0
-        };
-
-        optionsObject = {
-            sort: {postedDate: -1}
-        };
-
-        Conversation
-            .find( query, projectionObject , optionsObject)
-            .limit( limit )
-            .exec( callback );
-    }
-
     function subCredits(userObject, isInternal, src, callback){
         var msgPrice;
         var userObj;
@@ -163,6 +73,66 @@ var Message = function ( db, app ) {
                 callback( err );
             }
         });
+    }
+
+    function lastByChats( userId, limit, skip, callback ) {
+
+        Conversation.aggregate([
+            {
+                $match:{
+                    $or:[
+                        { "companion._id": userId },
+                        {"owner._id": userId }
+                    ],
+                    show: {
+                        $in: [userId]
+                    }
+                }
+            },
+            {
+                $sort: { postedDate: -1 }
+            },
+            {
+                $project: {
+                    body: 1,
+                    chat: 1,
+                    owner: 1,
+                    companion: 1,
+                    postedDate: 1
+                }
+            },
+            {
+                $group:{
+                    _id: "$chat",
+                    lastmessage: {
+                        $first:"$$ROOT"
+                    }
+                }
+            },
+            {
+                $sort: { "lastmessage.postedDate": -1 }
+            },
+            {
+                $skip: skip
+            },
+            {
+                $limit: limit
+            }
+        ], callback )
+    }
+
+    function getUnreadCount( userId, chat, callback ) {
+        Conversation
+            .find({
+                chat: chat,
+                "companion._id": userId,
+                show: {
+                    $in: [ userId ]
+                },
+                read: false
+            })
+            .count()
+            .exec( callback )
     }
 
     this.subCredits = subCredits;
@@ -407,7 +377,6 @@ var Message = function ( db, app ) {
         res.status( 200 ).send();
     };
 
-
     this.getConversations = function ( req, res, next ) {
         var userId = req.session.uId;
         var srcNumber = req.params.src;
@@ -462,57 +431,41 @@ var Message = function ( db, app ) {
         var page = parseInt(req.query.p) || 1;
         var skip = (page -1) * limit;
 
-        function test() {}
+        async.waterfall([
+            async.apply( lastByChats, userId, limit, skip ),
 
-        Conversation.aggregate([
-            {
-                $match:{
-                    $or:[
-                        { "companion._id": userId },
-                        {"owner._id": userId }
-                    ],
-                    show: {
-                        $in: [userId]
-                    }
-                }
-            },
-            {
-                $sort: { postedDate: -1 }
-            },
-            {
-                $project: {
-                    body: 1,
-                    chat: 1,
-                    owner: 1,
-                    companion: 1,
-                    postedDate: 1
-                }
-            },
-            {
-                $group:{
-                    _id: "$chat",
-                    lastmessage: {
-                        $first:"$$ROOT"
-                    }
-                }
-            },
-            {
-                $sort: { "lastmessage.postedDate": -1 }
-            },
-            {
-                $skip: skip
-            },
-            {
-                $limit: limit
+            function ( lastChatMsgs, callback ) {
+
+                async.map(
+                    lastChatMsgs,
+                    function ( oneMsgModel, callback ) {
+
+                        if (! oneMsgModel || ! oneMsgModel._id ) {
+                            return callback( null, oneMsgModel )
+                        }
+
+                        getUnreadCount( userId, oneMsgModel._id, function( err, count) {
+
+                            if ( err ) {
+                                return callback( null, oneMsgModel )
+                            }
+
+                            oneMsgModel.unread = count;
+                            callback( null, oneMsgModel );
+
+                        } )
+                    },
+                    callback
+                )
+
             }
         ], function ( err, docs ) {
-
             if ( err ) {
-                return next( err );
+                return next(err);
             }
 
             res.status( 200 ).send( docs );
-        })
+        });
 
     };
 
@@ -613,7 +566,6 @@ var Message = function ( db, app ) {
         });
     };
 
-
     /* get unread msg count for chat*/
     this.getUnReadCount = function( req, res, next ) {
         var userId = req.session.uId;
@@ -627,23 +579,14 @@ var Message = function ( db, app ) {
             chat = num1 + ':' + num2;
         }
 
-        Conversation
-            .find({
-                chat: chat,
-                "companion._id": userId,
-                show: {
-                    $in: [ userId ]
-                },
-                read: false
-            })
-            .count()
-            .exec( function( err, unreadCount ) {
-                if ( err ) {
-                    return next( err );
-                }
+        getUnreadCount( userId, chat, function ( err, unreadCount ) {
+            if ( err ) {
+                return next( err );
+            }
 
-                res.status( 200 ).send({ success: 'unread count', chat: chat, count: unreadCount })
-            })
+            res.status( 200 ).send({ success: 'unread count', chat: chat, count: unreadCount })
+        });
+
     };
 
     /* set messages as read

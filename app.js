@@ -1,19 +1,26 @@
-var express = require( 'express' );
 var path = require( 'path' );
-var logger = require( 'morgan' );
 var cookieParser = require( 'cookie-parser' );
 var bodyParser = require( 'body-parser' );
+var logger = require( 'morgan' );
+var express = require( 'express' );
 var mongoose = require( 'mongoose' );
-var app = express();
 var sockets = require( 'socket.io' );
+
+var app = express();
+
+var connectOptions;
 var SchedulerHandler;
 var shedule;
+var mainDb;
 
-if ( ! process.env.NODE_ENV ) {
-    process.env.NODE_ENV = 'development';
+/*Get configuration parameters*/
+if ( process.env.NODE_ENV ) {
+    require( './config/'+ process.env.NODE_ENV.toLowerCase() );
+} else {
+    require( './config/development' );
 }
 
-
+/* for Windows Phone: disable agressive cash*/
 app.use( function(req, res, next) {
     var browser = req.headers['user-agent'];
     console.log('---------------------------------');
@@ -23,23 +30,18 @@ app.use( function(req, res, next) {
     }
     next();
 }) ;
+
+/*Middleware functions*/
 app.use( logger( 'dev' ) );
 app.use( bodyParser.json({strict: false, limit: 1024 * 1024 * 200}) );
 app.use( bodyParser.urlencoded( { extended: false } ) );
 app.use( cookieParser() );
 app.use( express.static( path.join( __dirname, 'public' ) ) );
 
-if( app.get( 'env' ) === 'development' ) {
-    require( './config/development' );
-} else {
-    require( './config/production' );
-}
-
-var connectOptions = {
-    //db: { native_parser: true },
+/* Mongoose connection options*/
+connectOptions = {
     db: { native_parser: false },
     server: { poolSize: 5 },
-    //replset: { rs_name: 'myReplicaSetName' },
     user: process.env.DB_USER,
     pass: process.env.DB_PASS,
     w: 1,
@@ -47,13 +49,7 @@ var connectOptions = {
     mongos: true
 };
 
-var config = {
-    db: 1,
-    host: process.env.REDIS_HOST,
-    port: parseInt( process.env.REDIS_PORT ) || 6379
-};
-
-var mainDb = mongoose.createConnection( process.env.DB_HOST, process.env.DB_NAME, process.env.DB_PORT, connectOptions );
+mainDb = mongoose.createConnection( process.env.DB_HOST, process.env.DB_NAME, process.env.DB_PORT, connectOptions );
 
 mainDb.on( 'error', console.error.bind( console, 'connection error:' ) );
 mainDb.once( 'open', function callback() {
@@ -62,11 +58,18 @@ mainDb.once( 'open', function callback() {
     var session = require( 'express-session' );
     var MemoryStore = require( 'connect-redis' )( session );
     var SocketConnection = require('./handlers/socketConnections');
+    var config;
     var debug;
     var http;
     var port;
     var server;
     var io;
+
+    config = {
+        db: 1,
+        host: process.env.REDIS_HOST,
+        port: parseInt( process.env.REDIS_PORT ) || 6379
+    };
 
     app.use( session( {
         name: 'testCall',
