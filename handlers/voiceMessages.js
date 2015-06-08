@@ -38,6 +38,18 @@ var VoiceMessagesModule = function (db) {
     var plivo = new PlivoModule();
     var self = this;
 
+    this.calculateChatString = function (src, dst) {
+        var chat = '';
+
+        if (src > dst) {
+            chat = dst + ':' + src;
+        } else {
+            chat = src + ':' + dst;
+        }
+
+        return chat;
+    };
+
     this.checkBlockedNumbers = function (params, callback) {
         var criteria = {
             refUser: params.dstUserId,
@@ -160,14 +172,8 @@ var VoiceMessagesModule = function (db) {
         var companion = dstUser.companion;
         var srcUserId = srcUser._id;
         var dstUserId = companion._id;
-        var chat;
+        var chat = self.calculateChatString(src, dst);
         var credits; // send with response
-
-        if (src > dst) {
-            chat = dst + ':' + src;
-        } else {
-            chat = src + ':' + dst;
-        }
 
         async.waterfall([
 
@@ -310,14 +316,8 @@ var VoiceMessagesModule = function (db) {
         var srcUser = params.srcUser;
         var fileUrl = params.fileUrl;
         var srcUserId = srcUser._id;
-        var chat;
+        var chat = self.calculateChatString(src, dst);
         var credits;
-
-        if (src > dst) {
-            chat = dst + ':' + src;
-        } else {
-            chat = src + ':' + dst;
-        }
 
         async.waterfall([
 
@@ -528,7 +528,7 @@ var VoiceMessagesModule = function (db) {
 
     this.inboundPlivo = function (req, res, next) {
         var body = req.body;
-        var xml = plivo.generateRecordXML(body.From, body.To);
+        var xml = plivo.generateRecordXML();
 
         if (process.env.NODE_ENV !== 'production') {
             console.log('Plivo inCall request:');
@@ -548,24 +548,45 @@ var VoiceMessagesModule = function (db) {
                 return next(err);
             }
         };
-        var from = req.params.from;
-        var to = req.params.to;
         var body = req.body;
+        var src = body.From;
+        var dst = body.To;
         var plivoFileUrl = body.RecordUrl;
         var err;
+        var dstUser;
+        var socketConnectionObject;
+        var io = req.app.get('io');
 
-        //res.status(200).send({success: true});
+        res.status(200).send({success: true});
 
-        if (!from || !to || !plivoFileUrl) {
+        if (!src || !dst || !plivoFileUrl) {
             err = new Error();
-            err.message = NOT_ENAUGH_PARAMS + '. Required params: "from", "to", "fileUrl".';
+            err.message = NOT_ENAUGH_PARAMS + '. Required params: "From", "To", "RecordUrl";';
             err.status = 400;
-            return handleError(err, next);
+            return handleError(err);
         }
 
         async.waterfall([
 
-            //download the audio file:
+            //try to find the dst user:
+            function (cb) {
+                socketConnection.findSocket(dst, function (err, result) {
+                    if (err) {
+                        cb(err);
+                    } else if (!result) {
+                        err = new Error();
+                        err.message = 'dstUser was not found';
+                        err.status = 400;
+                        cb(err);
+                    } else {
+                        dstUser = result.companion;
+                        socketConnectionObject = result.socketConnection;
+                        cb();
+                    }
+                });
+            },
+
+            //download and save the audio file:
             function (cb) {
                 var ticks = new Date().valueOf();
                 var dirPath = path.join(path.dirname(require.main.filename), 'uploads');
@@ -574,33 +595,100 @@ var VoiceMessagesModule = function (db) {
                 var filePath = path.join(dirPath, fileName);
 
                 request(plivoFileUrl)
-                    .pipe(fs.createWriteStream(filePath, function (err) {
-                        if (err) {
-                            return cb(err);
-                        }
-                        console.log('>>> file %s was saved' , fileName);
-                        cb(null, fileUrl);
-                    }));
+                    .pipe(fs.createWriteStream(filePath));
 
                 cb(null, fileUrl);
             },
 
             //insert into conversations:
             function (fileUrl, cb) {
-                cb(null, null);
+                var chat = self.calculateChatString(src, dst);
+                var conversationData = {
+                    type: CONVERSATION_TYPES.VOICE,
+                    voiceURL: fileUrl,
+                    chat: chat,
+                    owner: {
+                        _id: EXTERNAL_USER_ID,
+                        name: {
+                            first: EXTERNAL_USER_FIRST_NAME,
+                            last: EXTERNAL_USER_LAST_NAME
+                        },
+                        number: src
+                    },
+                    companion: {
+                        _id: dstUser._id,
+                        name: {
+                            first: dstUser.name.first,
+                            last: dstUser.name.last
+                        },
+                        number: dst
+                    },
+                    show: [EXTERNAL_USER_ID, dstUser._id]
+                };
+                var conversationModel = new Conversation(conversationData);
+
+                conversationModel.save(function (err, savedModel) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    cb(null, savedModel);
+                });
             },
 
-            //send notification
+            //send socket notification:
             function (conversationModel, cb) {
-                cb();
+                //var socketConnectionObject = dstUser.socketConnection;
+                var socketIds = socketConnectionObject.socketId;
+
+                async.each(
+                    socketIds,
+                    function (socketId, eachCb) { // async.each iterator
+                        var dstSocket = io.sockets.connected[socketId];
+
+                        if (dstSocket) {
+                            dstSocket.emit('receiveMessage', conversationModel);
+                        }
+
+                        eachCb();
+                    },
+                    function (err) {             // callback for async.each
+                        if (err) {
+                            if (process.env.NODE_ENV !== 'production') {
+                                console.error(err);
+                            }
+                        } else {
+                            if (process.env.NODE_ENV !== 'production') {
+                                console.log('>>> socketio emit "reciveMessage" is success.');
+                            }
+                        }
+                    });
+
+                cb(null, conversationModel);
+            },
+
+            //send push notification:
+            function (conversationModel, cb) {
+                var fileUrl = conversationModel.voiceURL;
+                var pushParams = {
+                    toUser: dstUser._id.toString(),
+                    src: src,
+                    dst: dst,
+                    msg: 'You received a voice message. Link ' + fileUrl
+                };
+
+                if (dstUser && dstUser.enablepush) {
+                    pushHandler.sendPush(pushParams);
+                }
+
+                cb(null, conversationModel);
             }
 
         ], function (err) {
-            //TODO: request was send !!!
             if (err) {
-                return handleError(err, next);
+                return handleError(err);
+                //return handleError(err, next);
             }
-            res.status(200).send({success: true});
+            //res.status(200).send({success: true});
         });
 
     };

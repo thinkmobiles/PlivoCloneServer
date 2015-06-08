@@ -133,11 +133,11 @@ module.exports = function() {
         return response.toXML();
     };
 
-    this.generateRecordXML = function (from, to) {
+    this.generateRecordXML = function () {
         var response = plivo.Response();
 
         response.addRecord({
-            action: process.env.HOST + '/control/plivo/result/' + from + '/' + to,
+            action: process.env.HOST + '/control/plivo/result',
             method: 'POST',
             fileFormat: 'mp3',
             maxLength: 10,
