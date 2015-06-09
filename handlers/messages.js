@@ -18,6 +18,7 @@ var Message = function ( db, app ) {
     var newObjectId = mongoose.Types.ObjectId;
     var socketConnection = new SocketConnectionHandler( db );
     var push = new Push( db );
+    var user = new UserHandler( db );
 
     function subCredits(userObject, isInternal, src, callback){
         var msgPrice;
@@ -97,6 +98,8 @@ var Message = function ( db, app ) {
                     body: 1,
                     chat: 1,
                     owner: 1,
+                    type: 1,
+                    voiceURL: 1,
                     companion: 1,
                     postedDate: 1
                 }
@@ -134,6 +137,134 @@ var Message = function ( db, app ) {
             .count()
             .exec( callback )
     }
+
+    /* TODO TEST */
+    function getUser( dstNumber, callback ) {
+        var findCondition = {
+            "numbers.number": dstNumber
+        };
+
+        user.findUser( findCondition, callback )
+    }
+
+
+    function isBlockedNumber ( userId, number, callback ) {
+        var findCondition = {
+            refUser: newObjectId( userId ),
+            numbers : {
+                $elemMatch: {
+                    number: number,
+                    isBlocked: true
+                }
+            }
+        };
+
+        AddressBook.findOne( findCondition, callback )
+
+    }
+
+    function sendSocketMsg ( userId, data, callback ) {
+        var io = (app) ? app.get( 'io' ) : null;
+
+        io.to( userId ).emit('receiveMessage', data );
+        callback();
+    }
+
+    function getPrice( params, callback ) {
+        /*params = {
+            number: <String>,
+            countryIso: <String[2]>,
+            internal: <Boolean, >
+            msgType: <String, VOICE || TEXT>,
+            service: <String, PLIVO || NEXMO>
+        }*/
+        var findCondition = {
+            countryIso: params.countryIso
+        };
+
+
+        Price.findOne( findCondition, function( err, result) {
+            if (err) {
+                return callback( err );
+            }
+
+            if ( ! result ) {
+                err = new Error('Bad Country ISO');
+                err.status = 400;
+
+                return callback( err );
+            }
+
+            if ( params.internal  && params.msgType  === 'TEXT' ) {
+                return callback( null, parseInt( result.msgPriceInternal ) );
+            }
+
+            if ( params.internal  && params.msgType  === 'VOICE' ) {
+                return callback( null, parseInt( result.msgPriceInternal ) );
+            }
+
+            if ( !params.internal  && params.msgType  === 'TEXT' ) {
+                return callback( null, parseInt( result.msgPricePlivo ) );
+            }
+
+            if ( !params.internal  && params.msgType  === 'VOICE' ) {
+                return callback( null, parseInt( result.msgPricePlivo ) );
+            }
+
+            callback( null, 0 );
+
+        });
+    }
+
+    this.sendNewMessage = function( req, res, next ) {
+        var params = req.body;
+        var dst = params.dst;
+        var src = params.src;
+        var userId = req.session.uId;
+
+        function getUsers( callback ) {
+            async.parallel(
+                [
+                    async.apply( getUser, src ),
+                    async.apply( getUser, dst )
+                ],
+                callback
+            );
+        }
+
+        function sendInnerMsg( params ) {
+
+        }
+
+        function getDirection( users, callback ) {
+            var srcUser = users[0];
+            var dstUser = users[1];
+            var params = {
+                srcUser: srcUser,
+                dstUser: dstUser,
+                src: src,
+                dst: dst
+            };
+
+            async.waterfall([
+                getPrice,
+            ]);
+
+            if ( dstUser ) {
+                sendInnerMsg( params );
+            } else {
+                sendExternalMsg( params )
+            }
+        }
+
+        async.waterfall([
+            getUsers,
+            getPrice,
+            getDirection
+        ])
+    };
+
+
 
     this.subCredits = subCredits;
 
