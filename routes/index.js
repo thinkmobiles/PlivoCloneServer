@@ -39,6 +39,23 @@ module.exports = function(app, db) {
     app.use( '/voiceMessages', voiceMessages );
     app.use('/control', control );
 
+    //<editor-fold desc="Deleting temporary files from NodeJS using fs">
+    app.use(function (req, res, next) {
+        res.on('finish', function () {
+            if (req.files) {
+                Object.keys(req.files).forEach(function (file) {
+                    console.log(req.files[file].path);
+                    fs.unlink(req.files[file].path, function (err) {
+                        if (err) {
+                            console.log(err);
+                        }
+                    });
+                });
+            }
+        });
+        next();
+    });
+//</editor-fold>
 
     function notFound(req, res, next){
         next();

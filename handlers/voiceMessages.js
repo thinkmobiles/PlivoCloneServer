@@ -1,4 +1,5 @@
 'use strict';
+//TODO: numbers are stored with +
 
 var NOT_ENAUGH_PARAMS = 'Not enough incoming parameters. ';
 var DEFAULT_AUDIO_FILE_NAME = 'voiceMessage';
@@ -9,17 +10,13 @@ var EXTERNAL_USER_ID = '123456789';
 var EXTERNAL_USER_FIRST_NAME = 'Anonymous';
 var EXTERNAL_USER_LAST_NAME = 'Anonymous';
 
-var fs = require('fs');
-/*var plivo = require('plivo-node');
- var plivoAPI = plivo.RestAPI({
- "authId": process.env.PLIVO_AUTH_ID,
- "authToken": process.env.PLIVO_AUTH_TOKEN
- });*/
 var async = require('async');
+var fs = require('fs');
 var path = require('path');
 var lodash = require('lodash');
 var util = require('util');
 var request = require('request');
+//var sox = require('sox'); //https://www.npmjs.com/package/sox
 var FileStorage = require('../modules/fileStorage');
 var PushHandler = require('../handlers/push');
 var SocketConnectionHandler = require('../handlers/socketConnections');
@@ -102,9 +99,9 @@ var VoiceMessagesModule = function (db) {
         html += '<input type="text" name="src" value="+447441910183"/>';
         html += '<br>';
         html += '<label for="dst">dst </label>';
-        //html += '<input type="text" name="dst" value="19192751968"/>';
+        html += '<input type="text" name="dst" value="+19192751968"/>';
         //html += '<input type="text" name="dst" value="80936610051"/>';
-        html += '<input type="text" name="dst" value="+3614088916"/>';
+        //html += '<input type="text" name="dst" value="+3614088916"/>';
         html += '<br>';
         html += '<label for="voiceMsgFile">Voice message file </label>';
         html += '<input type="file" name="voiceMsgFile" />';
@@ -115,7 +112,81 @@ var VoiceMessagesModule = function (db) {
         res.send(html);
     };
 
+    function getAudioFileInfo(params, callback) {
+        sox.identify(params.srcFilePath, function (err, results) {
+            /* results looks like:
+             {
+             format: 'wav',
+             duration: 1.5,
+             sampleCount: 66150,
+             channelCount: 1,
+             bitRate: 722944,
+             sampleRate: 44100,
+             }
+             */
+            callback(err, results);
+        });
+    };
+
+    function convertTheAudioFile(params, callback) {
+        var sox = require('sox');
+        var from = params.srcFilePath;
+        var to = params.dstFilePath;
+        var format = params.format || 'mp3';
+
+        var job = sox.transcode(from, to, {
+            sampleRate: 44100,
+            format: format,
+            channelCount: 2,
+            bitRate: 192 * 1024,
+            compressionQuality: 5
+        });
+        job.on('error', function (err) {
+            console.error(err);
+        });
+        job.on('progress', function (amountDone, amountTotal) {
+            console.log("progress", amountDone, amountTotal);
+        });
+        job.on('src', function (info) {
+            console.log('>>> src: ');
+            console.dir(info);
+            /* info looks like:
+             {
+             format: 'wav',
+             duration: 1.5,
+             sampleCount: 66150,
+             channelCount: 1,
+             bitRate: 722944,
+             sampleRate: 44100,
+             }
+             */
+        });
+        job.on('dest', function (info) {
+            console.log('>>> dest: ');
+            console.dir(info);
+            /* info looks like:
+             {
+             sampleRate: 44100,
+             format: 'mp3',
+             channelCount: 2,
+             sampleCount: 67958,
+             duration: 1.540998,
+             bitRate: 196608,
+             }
+             */
+        });
+        job.on('end', function () {
+            console.log("all done");
+        });
+        job.start();
+    };
+
     function saveTheAudioFile(file, callback) {
+        var ticks = new Date().valueOf();
+        var dirPath = path.join(path.dirname(require.main.filename), 'uploads');
+        var extension = path.extname(file.path) || DEFAULT_AUDIO_EXTENSION;
+        var fileName = DEFAULT_AUDIO_FILE_NAME + '_' + ticks + extension;
+        var filePath = path.join(dirPath, fileName);
 
         async.waterfall([
 
@@ -131,10 +202,6 @@ var VoiceMessagesModule = function (db) {
 
             //save file to storage:
             function (fileData, cb) {
-                var ticks = new Date().valueOf();
-                var dirPath = path.join(path.dirname(require.main.filename), 'uploads'); //TODO: require.main.filename
-                var fileName = DEFAULT_AUDIO_FILE_NAME + '_' + ticks + DEFAULT_AUDIO_EXTENSION;
-                var fileUrl = process.env.HOST + '/' + DEFAULT_AUDIO_URL + fileName;
                 var postOptions = {
                     data: fileData
                 };
@@ -143,6 +210,44 @@ var VoiceMessagesModule = function (db) {
                     if (err) {
                         return cb(err);
                     }
+                    cb();
+                });
+            },
+
+            //check the file format
+            function (cb) {
+                var fileUrl;
+                var ticks = new Date().valueOf();
+                var transcodeParams;
+                var transcodeFileName;
+                var transcodeFilePath;
+
+                if (extension === DEFAULT_AUDIO_EXTENSION) {
+                    fileUrl = process.env.HOST + '/' + DEFAULT_AUDIO_URL + fileName;
+                    return cb(null, fileUrl);
+                }
+
+                //TODO: remove
+
+                fileUrl = process.env.HOST + '/' + DEFAULT_AUDIO_URL + fileName;
+                return cb(null, fileUrl);
+
+                //TODO: continue ...
+
+
+                transcodeFileName = DEFAULT_AUDIO_FILE_NAME + '_' + ticks + DEFAULT_AUDIO_EXTENSION;
+                transcodeFilePath = path.join(dirPath, transcodeFileName);
+
+                transcodeParams = {
+                    srcFilePath: filePath,
+                    dstFilePath: transcodeFilePath
+                };
+
+                convertTheAudioFile(transcodeParams, function (err, fileName) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    fileUrl = process.env.HOST + '/' + DEFAULT_AUDIO_URL + fileName;
                     cb(null, fileUrl);
                 });
             }
@@ -173,7 +278,7 @@ var VoiceMessagesModule = function (db) {
         var srcUserId = srcUser._id;
         var dstUserId = companion._id;
         var chat = self.calculateChatString(src, dst);
-        var credits; // send with response
+        //var credits; // send with response
 
         async.waterfall([
 
@@ -217,27 +322,11 @@ var VoiceMessagesModule = function (db) {
                 };
                 var conversationModel = new Conversation(conversationData);
 
-                /*
-                 //TODO: uncomment
-                 conversationModel.save(function (err, savedModel) {
-                 if (err) {
-                 return cb(err);
-                 }
-                 cb(null, savedModel);
-                 });*/
-                cb(null, conversationModel);
-            },
-
-            //subtract credits:
-            function (conversationModel, cb) {
-                var isInternal = true;
-
-                messagesHandler.subCredits(srcUser, isInternal, src, function (err, updatedCredits) {
+                conversationModel.save(function (err, savedModel) {
                     if (err) {
                         return cb(err);
                     }
-                    credits = updatedCredits;
-                    cb(null, conversationModel);
+                    cb(null, savedModel);
                 });
             },
 
@@ -297,8 +386,8 @@ var VoiceMessagesModule = function (db) {
             } else {
 
                 result = {
-                    conversation: conversation,
-                    credits: credits
+                    conversation: conversation/*,
+                     credits: credits*/
                 };
 
                 if (callback && (typeof callback === 'function')) {
@@ -317,15 +406,9 @@ var VoiceMessagesModule = function (db) {
         var fileUrl = params.fileUrl;
         var srcUserId = srcUser._id;
         var chat = self.calculateChatString(src, dst);
-        var credits;
+        //var credits;
 
         async.waterfall([
-
-            //check credits:
-            function (cb) {
-                //TODO: ...
-                cb();
-            },
 
             //create call
             function (cb) {
@@ -376,19 +459,6 @@ var VoiceMessagesModule = function (db) {
                     }
                     cb(null, savedModel);
                 });
-            },
-
-            //subtract credits:
-            function (conversationModel, cb) {
-                var isInternal = false;
-
-                messagesHandler.subCredits(srcUser, isInternal, src, function (err, updatedCredits) {
-                    if (err) {
-                        return cb(err);
-                    }
-                    credits = updatedCredits;
-                    cb(null, conversationModel);
-                });
             }
 
         ], function (err, conversation) {
@@ -400,8 +470,8 @@ var VoiceMessagesModule = function (db) {
                 }
             } else {
                 result = {
-                    conversation: conversation,
-                    credits: credits
+                    conversation: conversation/*,
+                     credits: creadits*/
                 };
 
                 if (callback && (typeof callback === 'function')) {
