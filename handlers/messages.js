@@ -416,7 +416,7 @@ var Message = function ( db, app ) {
                                                 push.sendPush( pushParams );
                                             };
 
-                                            res.status(201).send({credits: updatedCredits});
+                                            res.status(201).send({credits: updatedCredits , message: savedResponse });
                                         });
                                     }
                                 });
