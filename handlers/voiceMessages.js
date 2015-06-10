@@ -960,12 +960,20 @@ var VoiceMessagesModule = function (db) {
 
             ], function (err) {
                 if (err) {
+
                     if (callback && (typeof callback === 'function')) {
                         callback(err);
                     }
+                    if (process.env.NODE_ENV !== 'production') {
+                        console.error(err);
+                    }
+
                 } else {
                     if (callback && (typeof callback === 'function')) {
                         callback(null, models);
+                    }
+                    if (process.env.NODE_ENV !== 'production'){
+                        console.log('>>> deleteOldMessages cron job was finished success');
                     }
                 }
             });
