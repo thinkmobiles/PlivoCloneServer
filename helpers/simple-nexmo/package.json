@@ -1,0 +1,63 @@
+{
+  "name": "simple-nexmo",
+  "author": {
+    "name": "Calvert Yang"
+  },
+  "version": "2.1.1",
+  "description": "A nodejs wrapper for nexmo API",
+  "contributors": [
+    {
+      "name": "Calvert Yang"
+    }
+  ],
+  "keywords": [
+    "sms",
+    "tts",
+    "nexmo"
+  ],
+  "main": "lib/nexmo",
+  "dependencies": {},
+  "devDependencies": {
+    "istanbul": "^0.3.2",
+    "mocha": "^2.0.1",
+    "should": "^4.2.0"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "homepage": "https://github.com/CalvertYang/simple-nexmo",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/CalvertYang/simple-nexmo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/CalvertYang/simple-nexmo/issues"
+  },
+  "license": [
+    {
+      "type": "MIT",
+      "url": "http://calvert.mit-license.org"
+    }
+  ],
+  "gitHead": "b35618c97d1cf458bdc4bc6ad1b69b52497f97ed",
+  "_id": "simple-nexmo@2.1.1",
+  "_shasum": "76a8830c162ca18dbb5be218e0420bc21b78c23f",
+  "_from": "simple-nexmo@",
+  "_npmVersion": "1.4.28",
+  "_npmUser": {
+    "name": "calvert",
+    "email": "calvert@apputu.com"
+  },
+  "maintainers": [
+    {
+      "name": "calvert",
+      "email": "calvert@apputu.com"
+    }
+  ],
+  "dist": {
+    "shasum": "76a8830c162ca18dbb5be218e0420bc21b78c23f",
+    "tarball": "http://registry.npmjs.org/simple-nexmo/-/simple-nexmo-2.1.1.tgz"
+  },
+  "directories": {},
+  "_resolved": "https://registry.npmjs.org/simple-nexmo/-/simple-nexmo-2.1.1.tgz"
+}
