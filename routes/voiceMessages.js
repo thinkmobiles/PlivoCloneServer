@@ -15,8 +15,7 @@ module.exports = function(db) {
 
     router.post('/send', session.authenticatedUser, multipartMiddleware, voiceMessagesHandler.sendMessage);
     router.get('/audio/:fileName', voiceMessagesHandler.getAudioFile);
-    /*router.get('/answer/plivo', voiceMessagesHandler.answerPlivo);
-    router.get('/answer/nexmo', voiceMessagesHandler.answerNexmo);*/
+    router.get('/delete/old/messages', voiceMessagesHandler.testDeleteOldMessages);
 
     return router;
 };

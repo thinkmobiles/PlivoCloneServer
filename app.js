@@ -20,6 +20,8 @@ if ( process.env.NODE_ENV ) {
     require( './config/development' );
 }
 
+process.env.UPLOAD_DIR = path.join(path.dirname(require.main.filename), 'uploads');
+
 /* for Windows Phone: disable agressive cash*/
 app.use( function(req, res, next) {
     var browser = req.headers['user-agent'];
