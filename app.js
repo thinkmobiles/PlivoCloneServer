@@ -10,7 +10,7 @@ var app = express();
 
 var connectOptions;
 var SchedulerHandler;
-var shedule;
+var schedule;
 var mainDb;
 
 /*Get configuration parameters*/
@@ -86,8 +86,10 @@ mainDb.once( 'open', function callback() {
     // TODO test schedule
 
     SchedulerHandler = require('./handlers/schedule');
-    shedule = new SchedulerHandler(mainDb);
-    shedule.cronJob.start();
+    schedule = new SchedulerHandler(mainDb);
+    schedule.cronJob.start();
+    schedule.deleteOldMessagesJob.start();
+
 
     debug = require( 'debug' )( 'Plivo:server' );
     http = require( 'http' );
