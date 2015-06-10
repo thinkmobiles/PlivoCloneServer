@@ -13,7 +13,7 @@ var EXTERNAL_USER_LAST_NAME = 'Anonymous';
 var async = require('async');
 var fs = require('fs');
 var path = require('path');
-var lodash = require('lodash');
+var _ = require('lodash');
 var util = require('util');
 var request = require('request');
 var sox = require('sox'); //https://www.npmjs.com/package/sox
@@ -204,7 +204,7 @@ var VoiceMessagesModule = function (db) {
 
     function saveTheAudioFile(file, callback) {
         var ticks = new Date().valueOf();
-        var dirPath = path.join(path.dirname(require.main.filename), 'uploads');
+        var dirPath = proces.env.UPLOAD_DIR;
         var extension = path.extname(file.path) || DEFAULT_AUDIO_EXTENSION;
         var fileName = DEFAULT_AUDIO_FILE_NAME + '_' + ticks + extension;
         var filePath = path.join(dirPath, fileName);
@@ -261,6 +261,7 @@ var VoiceMessagesModule = function (db) {
                         return cb(err);
                     }
                     fileUrl = process.env.HOST + '/' + DEFAULT_AUDIO_URL + transcodeFileName;
+                    removeAudioFileByUrl(fileUrl);
                     cb(null, fileUrl);
                 });
             }
@@ -273,6 +274,69 @@ var VoiceMessagesModule = function (db) {
             } else {
                 if (callback && (typeof callback === 'function')) {
                     callback(null, fileUrl);
+                }
+            }
+        });
+    };
+
+    function removeAudioFileByUrl(fileUrl, callback) {
+        var fileName = '';
+        var filePath = '';
+        var err;
+
+        if (!fileUrl || (typeof fileUrl !== 'string')) {
+            err = new Error();
+            err.message = NOT_ENAUGH_PARAMS + '"fileUrl" was undefined';
+            err.status = 400;
+            if (callback && (typeof callback === 'function')) {
+                callback(err);
+            }
+            return;
+        }
+
+        fileName = _.last(fileUrl.split('/'));
+        filePath = path.join(process.env.UPLOAD_DIR, fileName);
+
+        return removeAudioFile(filePath, callback);
+
+    };
+
+    function removeAudioFile(filePath, callback) {
+        var err;
+
+        async.waterfall([
+
+            //is exists file:
+            function (cb) {
+                fs.exists(filePath, function (exists) {
+                    if (!exists) {
+                        err = new Error();
+                        err.message = 'File "' + filePath + '" was not found.';
+                        err.status = 400;
+                        return cb(err);
+                    }
+                    cb();
+                });
+            },
+
+            //try to remove:
+            function (cb) {
+                fs.unlink(filePath, function (err) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    cb();
+                });
+            }
+
+        ], function (err) {
+            if (err) {
+                if (callback && (typeof callback === 'function')) {
+                    callback(err);
+                }
+            } else {
+                if (callback && (typeof callback === 'function')) {
+                    callback();
                 }
             }
         });
@@ -573,14 +637,14 @@ var VoiceMessagesModule = function (db) {
                         if (err) {
                             return next(err);
                         }
-                        res.status(201).send({success: 'message created', credits: result.credits});
+                        res.status(201).send({success: 'message created', message: result.conversation});
                     });
                 } else {
                     self.sendExternalMessage(sendMessageParams, function (err, result) {
                         if (err) {
                             return next(err);
                         }
-                        res.status(201).send({success: 'message created', credits: result.credits});
+                        res.status(201).send({success: 'message created', message: result.conversation});
                     });
                 }
 
@@ -800,6 +864,113 @@ var VoiceMessagesModule = function (db) {
         res.status(500).send({error: 'Not implemented yet'})
     };
 
+    this.testDeleteOldMessages = function (req, res, next) {
+        self.deleteOldMessages(function (err, result) {
+            if (err) {
+                return next(err);
+            }
+            res.status(200).send({success: true, result: result});
+        });
+    };
+
+    this.deleteOldMessages = function (callback) {
+        var models;
+        var now = new Date();
+        var criteria = {
+            type: CONVERSATION_TYPES.VOICE,
+            $or: [{
+                read: false,
+                saved: false,
+                postedDate: {
+                    $lte: new Date(now - (1000 * 60 * 60 * 24 * 7)) // 7 days before
+                }
+            }, {
+                read: true,
+                saved: false,
+                postedDate: {
+                    $lte: new Date(now - (1000 * 60 * 60 * 24 * 3)) // 3 days before
+                }
+            }, {
+                saved: true,
+                postedDate: {
+                    $lte: new Date(now - (1000 * 60 * 60 * 24 * 14)) // 14 days before
+                }
+            }, {
+                postedDate: {
+                    $lte: new Date(now - (1000 * 60 * 60 * 24 * 14)) // 14 days before
+                }
+            }]
+        };
+        var fields = {
+            type: 1,
+            postedDate: 1, //TODO: remove this field
+            voiceURL: 1
+        };
+
+        Conversation.find(criteria, fields, function (err, conversationModels) {
+            if (err) {
+                if (callback && (typeof callback === 'function')) {
+                    callback(err);
+                }
+                return;
+            }
+
+            models = conversationModels;
+
+            async.parallel([
+
+                //try to remove audio files:
+                function (cb) {
+                    var fileUrls = _.pluck(models, 'voiceURL');
+
+                    async.each(fileUrls,
+                        function (url, eachCb) {
+                            removeAudioFileByUrl(url, function (err) {
+                                if (err) {
+                                    if (process.env.NODE_ENV !== 'production') {
+                                        console.error(err);
+                                    }
+                                }
+                                eachCb();
+                            });
+                    }, function (err) {
+                        if (err) {
+                            return cb(err);
+                        }
+                        cb();
+                    })
+                },
+
+                //try to remove conversation models:
+                function (cb) {
+                    var ids = _.pluck(models, '_id');
+                    var criteria = {
+                        _id: {
+                            $in: ids
+                        }
+                    };
+
+                    Conversation.remove(criteria, function (err, result) {
+                        if (err) {
+                            return cb(err);
+                        }
+                        cb();
+                    });
+                }
+
+            ], function (err) {
+                if (err) {
+                    if (callback && (typeof callback === 'function')) {
+                        callback(err);
+                    }
+                } else {
+                    if (callback && (typeof callback === 'function')) {
+                        callback(null, models);
+                    }
+                }
+            });
+        });
+    };
 };
 
 module.exports = VoiceMessagesModule;
