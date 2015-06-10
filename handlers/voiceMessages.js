@@ -971,6 +971,10 @@ var VoiceMessagesModule = function (db) {
             });
         });
     };
+
+    this.setupDeleteOldMessages = function () {
+        //TODO: ...
+    };
 };
 
 module.exports = VoiceMessagesModule;
