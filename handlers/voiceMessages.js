@@ -16,7 +16,7 @@ var path = require('path');
 var lodash = require('lodash');
 var util = require('util');
 var request = require('request');
-//var sox = require('sox'); //https://www.npmjs.com/package/sox
+var sox = require('sox'); //https://www.npmjs.com/package/sox
 var FileStorage = require('../modules/fileStorage');
 var PushHandler = require('../handlers/push');
 var SocketConnectionHandler = require('../handlers/socketConnections');
@@ -129,7 +129,6 @@ var VoiceMessagesModule = function (db) {
     };
 
     function convertTheAudioFile(params, callback) {
-        var sox = require('sox');
         var from = params.srcFilePath;
         var to = params.dstFilePath;
         var format = params.format || 'mp3';
@@ -138,46 +137,68 @@ var VoiceMessagesModule = function (db) {
             sampleRate: 44100,
             format: format,
             channelCount: 2,
-            bitRate: 192 * 1024,
-            compressionQuality: 5
+            bitRate: 64 * 1024,
+            compressionQuality: 2
         });
+
         job.on('error', function (err) {
-            console.error(err);
+            if (process.env.NODE_ENV !== 'produnction') {
+                console.error(err);
+            }
+            if (callback && (typeof callback === 'function')) {
+                callback(error);
+            }
         });
-        job.on('progress', function (amountDone, amountTotal) {
-            console.log("progress", amountDone, amountTotal);
-        });
+
+        /*
+         job.on('progress', function (amountDone, amountTotal) {
+         console.log("progress", amountDone, amountTotal);
+         });
+         */
+
         job.on('src', function (info) {
-            console.log('>>> src: ');
-            console.dir(info);
-            /* info looks like:
-             {
-             format: 'wav',
-             duration: 1.5,
-             sampleCount: 66150,
-             channelCount: 1,
-             bitRate: 722944,
-             sampleRate: 44100,
-             }
-             */
+            if (process.env.NODE_ENV !== 'production') {
+                console.log('>>> src: ');
+                console.dir(info);
+                /* info looks like:
+                 {
+                 format: 'wav',
+                 duration: 1.5,
+                 sampleCount: 66150,
+                 channelCount: 1,
+                 bitRate: 722944,
+                 sampleRate: 44100,
+                 }
+                 */
+            }
         });
+
         job.on('dest', function (info) {
-            console.log('>>> dest: ');
-            console.dir(info);
-            /* info looks like:
-             {
-             sampleRate: 44100,
-             format: 'mp3',
-             channelCount: 2,
-             sampleCount: 67958,
-             duration: 1.540998,
-             bitRate: 196608,
-             }
-             */
+            if (process.env.NODE_ENV !== 'production') {
+                console.log('>>> dest: ');
+                console.dir(info);
+                /* info looks like:
+                 {
+                 sampleRate: 44100,
+                 format: 'mp3',
+                 channelCount: 2,
+                 sampleCount: 67958,
+                 duration: 1.540998,
+                 bitRate: 196608,
+                 }
+                 */
+            }
         });
+
         job.on('end', function () {
-            console.log("all done");
+            if (process.env.NODE_ENV !== 'production') {
+                console.log("all done");
+            }
+            if (callback && (typeof callback === 'function')) {
+                callback();
+            }
         });
+
         job.start();
     };
 
@@ -227,14 +248,6 @@ var VoiceMessagesModule = function (db) {
                     return cb(null, fileUrl);
                 }
 
-                //TODO: remove
-
-                fileUrl = process.env.HOST + '/' + DEFAULT_AUDIO_URL + fileName;
-                return cb(null, fileUrl);
-
-                //TODO: continue ...
-
-
                 transcodeFileName = DEFAULT_AUDIO_FILE_NAME + '_' + ticks + DEFAULT_AUDIO_EXTENSION;
                 transcodeFilePath = path.join(dirPath, transcodeFileName);
 
@@ -243,11 +256,11 @@ var VoiceMessagesModule = function (db) {
                     dstFilePath: transcodeFilePath
                 };
 
-                convertTheAudioFile(transcodeParams, function (err, fileName) {
+                convertTheAudioFile(transcodeParams, function (err) {
                     if (err) {
                         return cb(err);
                     }
-                    fileUrl = process.env.HOST + '/' + DEFAULT_AUDIO_URL + fileName;
+                    fileUrl = process.env.HOST + '/' + DEFAULT_AUDIO_URL + transcodeFileName;
                     cb(null, fileUrl);
                 });
             }
@@ -608,32 +621,20 @@ var VoiceMessagesModule = function (db) {
         res.status(200).send(xml);
     };
 
-    this.plivoRecordCallback = function (req, res, next) {
-        var handleError = function (err) {
-            if (process.env.NODE_ENV !== 'production') {
-                console.log(err);
-            }
-
-            if (next) {
-                return next(err);
-            }
-        };
-        var body = req.body;
-        var src = body.From;
-        var dst = body.To;
-        var plivoFileUrl = body.RecordUrl;
+    this.sendInboundMessage = function (params, callback) {
+        var src = params.src;
+        var dst = params.dst;
+        var plivoFileUrl = params.recordUrl;
+        var io = params.io;
         var err;
         var dstUser;
         var socketConnectionObject;
-        var io = req.app.get('io');
 
-        res.status(200).send({success: true});
-
-        if (!src || !dst || !plivoFileUrl) {
+        if (!src || !dst || !plivoFileUrl || !io) {
             err = new Error();
-            err.message = NOT_ENAUGH_PARAMS + '. Required params: "From", "To", "RecordUrl";';
+            err.message = NOT_ENAUGH_PARAMS + '. Required params: "src", "dst", "recordUrl", "io";';
             err.status = 400;
-            return handleError(err);
+            return callback(err);
         }
 
         async.waterfall([
@@ -753,10 +754,31 @@ var VoiceMessagesModule = function (db) {
                 cb(null, conversationModel);
             }
 
-        ], function (err) {
+        ], function (err, conversationModel) {
             if (err) {
-                return handleError(err);
-                //return handleError(err, next);
+                return callback(err);
+            }
+            callback(null, conversationModel);
+        });
+    };
+
+    this.plivoRecordCallback = function (req, res, next) {
+        var options = req.body;
+        var voiceMessageParams = {
+            src: options.From,
+            dst: options.To,
+            recordUrl: options.RecordUrl,
+            io: req.app.get('io')
+        };
+
+        res.status(200).send({success: true});
+
+        self.sendInboundMessage(voiceMessageParams, function (err, results) {
+            if (err) {
+                if (process.env.NODE_ENV !== 'production') {
+                    console.error(err);
+                }
+                //return next(err);
             }
             //res.status(200).send({success: true});
         });
