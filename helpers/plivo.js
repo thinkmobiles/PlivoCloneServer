@@ -12,6 +12,12 @@ var outCallXmlRoute = process.env.HOST + '/control/plivo/outbound/';
 module.exports = function() {
 
     this.sendSmsMsg = function ( params, callback ) {
+        /*params = {
+         from: <from number>,
+         to: <to number>,
+         text: <msg text>
+         };*/
+
         var from = params.from;
         var to = params.to;
         var text = params.text;
