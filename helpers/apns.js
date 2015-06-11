@@ -70,10 +70,10 @@ module.exports = (function () {
 
                 if(options.expirationDate){
                     note.expiry = options.expirationDate;
-                } /*else {
+                } else {
                     var pushExpiry = parseInt(process.env.PUSH_EXPIRY);
                     note.expiry = Math.floor(Date.now() / 1000) + pushExpiry; // Expires 1 hour from now.
-                }*/
+                }
 
                 note.alert = msg;
 
@@ -91,7 +91,6 @@ module.exports = (function () {
                 if (options && options.sound) {
                     note.sound = options.sound + '.caf';
                 }
-                console.dir(note);
 
                 this.pushNotification(note, device);
                 return true;
