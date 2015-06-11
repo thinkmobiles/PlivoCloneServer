@@ -15,7 +15,11 @@ module.exports = function(db) {
 
     router.post('/send', session.authenticatedUser, multipartMiddleware, voiceMessagesHandler.sendMessage);
     router.get('/audio/:fileName', voiceMessagesHandler.getAudioFile);
-    router.get('/delete/old/messages', voiceMessagesHandler.testDeleteOldMessages);
+
+    router.get('/delete/old/messages', voiceMessagesHandler.testDeleteOldMessages); //TODO: use only for tests, remove on production;
+    router.get('/numbers', voiceMessagesHandler.testGetNumberPriceByCountry); //TODO: use only for tests, remove on production;
+
+    router.get('/providers', voiceMessagesHandler.testGetCheapestProviderByCountry); //TODO: use only for tests, remove on production;
 
     return router;
 };

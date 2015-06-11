@@ -7,9 +7,13 @@ var newObjectId = mongoose.Types.ObjectId;
 var Wns = require('../helpers/wns');
 var async = require('async');
 var path = require('path');
+var _ = require('lodash');
 var wns = new Wns;
 var gcm = require('../helpers/gcm')('AIzaSyCon4JAMBlXEonuzKYLCO5PbOW3PjH_biU');
 var apn = require('../helpers/apns')(path.join("config/PseudoAPNSDev.p12"));
+
+var PUSH_OPERATORS = require('../constants/pushOperators');
+var operatorRegExp = new RegExp('^'+ _.values(PUSH_OPERATORS).join('$|^') + '$' );
 
 var Push = function (db) {
     var self = this;
@@ -39,6 +43,10 @@ var Push = function (db) {
         var provider = req.body.provider;
         var channelURI = req.body.channelId;
 
+        if ( !channelURI ||! provider ) {
+            return res.status( 400 ).send( { error: 'Bad request' } );
+        }
+
         if ( channelURI && provider ) {
             User.findOne( {_id: userId, enablepush: true }, function( err, resUser ){
                 if ( err ) {
@@ -51,59 +59,19 @@ var Push = function (db) {
                     return next( err )
                 }
 
-                switch ( provider ) {
-                    case 'WINDOWS': {
-                        saveChannel( userId, channelURI, 'WINDOWS', function( err ) {
-                            if ( err && err.code !== 11000 ) {
-                                err = new Error('channel exist');
-                                err.status = 409;
-                                return next( err );
-                            }
-                            res.status( 200 ).send('channel saved');
-                        } );
-                    }
-                        break;
-
-                    case 'GOOGLE': {
-                        saveChannel( userId, channelURI, 'GOOGLE', function() {
-
-                            if ( err && err.code !== 11000 ) {
-                                err.status = 409;
-                                return next( err );
-                            }
-                            res.status( 200 ).send('channel saved');
-
-                        });
-                    }
-                        break;
-
-                    case 'APPLE': {
-                        saveChannel( userId, channelURI, 'APPLE', function() {
-
-                            if ( err && err.code !== 11000 ) {
-                                err.status = 409;
-                                return next( err );
-                            }
-                            res.status( 200 ).send('channel saved');
-
-                        });
-                    }
-                        break;
-
-                    default: {
-                        res.status( 500 ).send('not implemented');
-                    }
-                        break;
+                if (! operatorRegExp.test( provider ) ) {
+                    return res.status( 500 ).send( { error: 'not implemented' } );
                 }
 
-                /*saveWinChannel( userId, channelURI, function( err ) {
+                saveChannel( userId, channelURI, 'WINDOWS', function( err ) {
                     if ( err && err.code !== 11000 ) {
                         err = new Error('channel exist');
                         err.status = 409;
                         return next( err );
                     }
                     res.status( 200 ).send('channel saved');
-                } );*/
+                } );
+
 
             } );
         }

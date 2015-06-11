@@ -1,6 +1,10 @@
 /**
  * Created by Roman on 12.02.2015.
  */
+
+var PROVIDERS = require('../constants/providerTypes');
+var _ = require('lodash');
+var re = new RegExp('^'+ _.values(PROVIDERS).join('$|^') + '$', 'i' );
 module.exports = function ( db ) {
     "use strict";
     //todo add indexes for number unique
@@ -12,6 +16,10 @@ module.exports = function ( db ) {
         number: {
             type: String
             //, unique: true
+        },
+        provider: {
+            type: String,
+            match: re
         },
         countryIso: {
             type: String,
@@ -39,6 +47,7 @@ module.exports = function ( db ) {
     user = new schema( {
         email: {type: String, unique: true},
         password: String,
+        /* mobile is not used */
         mobile: String,
         avatar:String,
         credits: {

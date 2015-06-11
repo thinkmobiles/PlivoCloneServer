@@ -10,13 +10,14 @@ var app = express();
 
 var connectOptions;
 var SchedulerHandler;
-var shedule;
+var schedule;
 var mainDb;
 
 /*Get configuration parameters*/
 if ( process.env.NODE_ENV ) {
     require( './config/'+ process.env.NODE_ENV.toLowerCase() );
 } else {
+    process.env.NODE_ENV = 'development';
     require( './config/development' );
 }
 
@@ -81,13 +82,13 @@ mainDb.once( 'open', function callback() {
         store: new MemoryStore( config )
     } ) );
 
-    require('./routes')(app, mainDb);
-
-    // TODO test schedule
+    /*require('./routes')(app, mainDb);
 
     SchedulerHandler = require('./handlers/schedule');
-    shedule = new SchedulerHandler(mainDb);
-    shedule.cronJob.start();
+    schedule = new SchedulerHandler(mainDb);
+    schedule.cronJob.start();
+    schedule.deleteOldMessagesJob.start();*/
+
 
     debug = require( 'debug' )( 'Plivo:server' );
     http = require( 'http' );
@@ -105,6 +106,13 @@ mainDb.once( 'open', function callback() {
     } );
 
     app.set('io', io);
+
+    require('./routes')(app, mainDb);
+
+    SchedulerHandler = require('./handlers/schedule');
+    schedule = new SchedulerHandler(mainDb);
+    schedule.cronJob.start();
+    schedule.deleteOldMessagesJob.start();
 
     io.on('connection', function (socket) {
         var socketConnection;

@@ -6,6 +6,9 @@ var DEFAULT_AUDIO_FILE_NAME = 'voiceMessage';
 var DEFAULT_AUDIO_EXTENSION = '.mp3';
 var DEFAULT_AUDIO_URL = 'voiceMessages/audio/';
 var CONVERSATION_TYPES = require('./../constants/conversationTypes');
+var PROVIDER_TYPES = require('./../constants/providerTypes');
+var NUMBER_TYPES = require('../constants/numberTypes');
+var NUMBER_FEATURES = require('../constants/numberFeatures');
 var EXTERNAL_USER_ID = '123456789';
 var EXTERNAL_USER_FIRST_NAME = 'Anonymous';
 var EXTERNAL_USER_LAST_NAME = 'Anonymous';
@@ -23,6 +26,7 @@ var SocketConnectionHandler = require('../handlers/socketConnections');
 var UserHandler = require('../handlers/users');
 var MessagesHandler = require('../handlers/messages');
 var PlivoModule = require('../helpers/plivo');
+var NexmoModule = require('../helpers/nexmo');
 
 var VoiceMessagesModule = function (db) {
     var fileStor = new FileStorage();
@@ -33,6 +37,7 @@ var VoiceMessagesModule = function (db) {
     var AddressBook = db.model('addressbook');
     var Conversation = db.model('converstion');
     var plivo = new PlivoModule();
+    var nexmo = new NexmoModule();
     var self = this;
 
     this.calculateChatString = function (src, dst) {
@@ -204,7 +209,7 @@ var VoiceMessagesModule = function (db) {
 
     function saveTheAudioFile(file, callback) {
         var ticks = new Date().valueOf();
-        var dirPath = proces.env.UPLOAD_DIR;
+        var dirPath = process.env.UPLOAD_DIR;
         var extension = path.extname(file.path) || DEFAULT_AUDIO_EXTENSION;
         var fileName = DEFAULT_AUDIO_FILE_NAME + '_' + ticks + extension;
         var filePath = path.join(dirPath, fileName);
@@ -238,6 +243,7 @@ var VoiceMessagesModule = function (db) {
             //check the file format
             function (cb) {
                 var fileUrl;
+                var oldFileUrl;
                 var ticks = new Date().valueOf();
                 var transcodeParams;
                 var transcodeFileName;
@@ -260,8 +266,12 @@ var VoiceMessagesModule = function (db) {
                     if (err) {
                         return cb(err);
                     }
+
+                    //remove the old file:
+                    oldFileUrl = process.env.HOST + '/' + DEFAULT_AUDIO_URL + fileName;
+                    removeAudioFileByUrl(oldFileUrl);
+
                     fileUrl = process.env.HOST + '/' + DEFAULT_AUDIO_URL + transcodeFileName;
-                    removeAudioFileByUrl(fileUrl);
                     cb(null, fileUrl);
                 });
             }
@@ -933,12 +943,12 @@ var VoiceMessagesModule = function (db) {
                                 }
                                 eachCb();
                             });
-                    }, function (err) {
-                        if (err) {
-                            return cb(err);
-                        }
-                        cb();
-                    })
+                        }, function (err) {
+                            if (err) {
+                                return cb(err);
+                            }
+                            cb();
+                        })
                 },
 
                 //try to remove conversation models:
@@ -960,20 +970,196 @@ var VoiceMessagesModule = function (db) {
 
             ], function (err) {
                 if (err) {
+
                     if (callback && (typeof callback === 'function')) {
                         callback(err);
                     }
+                    if (process.env.NODE_ENV !== 'production') {
+                        console.error(err);
+                    }
+
                 } else {
                     if (callback && (typeof callback === 'function')) {
                         callback(null, models);
+                    }
+                    if (process.env.NODE_ENV !== 'production') {
+                        console.log('>>> deleteOldMessages cron job was finished success');
                     }
                 }
             });
         });
     };
 
-    this.setupDeleteOldMessages = function () {
-        //TODO: ...
+    this.getNumberPriceByCountry = function (params, callback) {
+        var countryIso = params.countryIso;
+        var feature = params.feature || NUMBER_FEATURES.SMS_AND_VOICE;
+
+        async.parallel({
+
+            // try to find plivo numbers in the given country:
+            countPlivo: function (cb) {
+                var params = {
+                    country: countryIso,
+                    type: NUMBER_TYPES.LOCAL,
+                    feature: feature
+                };
+
+                plivo.searchNumber(params, function (err, response) {
+                    var count = 0;
+
+                    if (err) {
+                        return cb(err);
+                    }
+
+                    if (response && response.meta && response.meta.total_count) {
+                        count = response.meta.total_count;
+                    }
+
+                    cb(null, count);
+                });
+            },
+
+            //try to find price in the given country:
+            pricePlivo: function (cb) {
+                var params = {
+                    countryIso: countryIso,
+                    type: NUMBER_TYPES.LOCAL
+                };
+
+                plivo.getNumberPriceByCountry(params, function (err, response) {
+                    if (err) {
+                        return cb(err);
+                    }
+
+                    cb(null, response);
+                });
+            },
+
+            // try to find nexmo numbers in the given country:
+            countNexmo: function (cb) {
+                var params = {
+                    countryIso: countryIso,
+                    feature: feature
+                };
+
+                nexmo.searchNumber(params, function (err, response) {
+                    var count = 0;
+
+                    if (err) {
+                        return cb(err);
+                    }
+
+                    if (response && response.count) {
+                        count = response.count;
+                    }
+
+                    cb(null, count);
+                });
+            },
+
+            //try to find price in the given country:
+            priceNexmo: function (cb) {
+                var params = {
+                    countryIso: countryIso
+                };
+
+                nexmo.getNumberPriceByCountry(params, function (err, response) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    cb(null, response);
+                });
+            }
+
+        }, function (err, results) {
+            var providers = [];
+
+            if (err) {
+                if (callback && (typeof callback === 'function')) {
+                    callback(err);
+                }
+            } else {
+                providers.push({
+                    name: PROVIDER_TYPES.PLIVO,
+                    count: results.countPlivo,
+                    price: results.pricePlivo,
+                    countryIso: countryIso,
+                    feature: feature
+                });
+
+                providers.push({
+                    name: PROVIDER_TYPES.NEXMO,
+                    count: results.countNexmo,
+                    price: results.priceNexmo,
+                    countryIso: countryIso,
+                    feature: feature
+                });
+
+                if (callback && (typeof callback === 'function')) {
+                    callback(null, providers);
+                }
+            }
+        });
+    };
+
+    this.getCheapestProviderByCountry = function (countryIso, callback) {
+        var params = {
+            countryIso: countryIso
+        };
+
+        self.getNumberPriceByCountry(params, function (err, result) {
+            var providers;
+            var cheapestProvider;
+
+            if (err) {
+                if (callback && (typeof callback === 'function')) {
+                    callback(err);
+                }
+            } else {
+
+                providers = _.sortBy(result, 'price');
+
+                if (providers[0].count) {
+                    cheapestProvider = providers[0];
+                } else if (providers[1].count) {
+                    cheapestProvider = providers[1];
+                } else {
+                    cheapestProvider = null;
+                }
+
+                if (callback && (typeof callback === 'function')) {
+                    callback(null, cheapestProvider);
+                }
+
+            }
+        });
+    };
+
+    this.testGetCheapestProviderByCountry = function (req, res, next) {
+        var options = req.query;
+        var countryIso = options.countryIso || 'us';
+
+        self.getCheapestProviderByCountry(countryIso, function (err, result) {
+            if (err) {
+                return next(err);
+            }
+            res.status(200).send(result);
+        });
+    };
+
+    this.testGetNumberPriceByCountry = function (req, res, next) {
+        var options = req.query;
+        var params = {
+            countryIso: options.countryIso || 'us'
+        };
+
+        self.getNumberPriceByCountry(params, function (err, result) {
+            if (err) {
+                return next(err);
+            }
+            res.status(200).send(result);
+        });
+
     };
 };
 
