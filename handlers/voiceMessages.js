@@ -209,7 +209,7 @@ var VoiceMessagesModule = function (db) {
 
     function saveTheAudioFile(file, callback) {
         var ticks = new Date().valueOf();
-        var dirPath = proces.env.UPLOAD_DIR;
+        var dirPath = process.env.UPLOAD_DIR;
         var extension = path.extname(file.path) || DEFAULT_AUDIO_EXTENSION;
         var fileName = DEFAULT_AUDIO_FILE_NAME + '_' + ticks + extension;
         var filePath = path.join(dirPath, fileName);
@@ -983,10 +983,6 @@ var VoiceMessagesModule = function (db) {
                 }
             });
         });
-    };
-
-    this.setupDeleteOldMessages = function () {
-        //TODO: ...
     };
 
     this.getNumberPriceByCountry = function (params, callback) {
