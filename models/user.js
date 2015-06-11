@@ -13,6 +13,10 @@ module.exports = function ( db ) {
             type: String
             //, unique: true
         },
+        service: {
+            /*PLIVO or NEXMO*/
+            type: String
+        },
         countryIso: {
             type: String,
             uppercase: 1
@@ -39,6 +43,7 @@ module.exports = function ( db ) {
     user = new schema( {
         email: {type: String, unique: true},
         password: String,
+        /* mobile is not used */
         mobile: String,
         avatar:String,
         credits: {
