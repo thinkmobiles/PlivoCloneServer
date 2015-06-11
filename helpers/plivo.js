@@ -7,7 +7,8 @@ var api = plivo.RestAPI( {
     "authToken": process.env.PLIVO_AUTH_TOKEN ||"ZDNhZjZmYTZiZWU3NzJjNGZkOWYyMmY0YTA3ZGZk"
 } );
 var outCallXmlRoute = process.env.HOST + '/control/plivo/outbound/';
-
+var NUMBER_TYPES = require('../constants/numberTypes');
+var NUMBER_FEATURES = require('../constants/numberFeatures');
 
 module.exports = function() {
 
@@ -46,13 +47,15 @@ module.exports = function() {
     this.searchNumber = function ( params, callback ) {
         var options;
         var country = params.countryIso || 'US';
+        var type = params.type || NUMBER_TYPES.LOCAL;  //TODO DISCUSE;
+        var services = params.feature || NUMBER_FEATURES.SMS_AND_VOICE;  //TODO DISCUSE;
         var page = params.page || 1;
         var limit = params.limit || 20;
 
         options = {
             country_iso: country,
-            services: 'voice,sms',
-            type: 'any',  //TODO DISCUSE
+            services: services,
+            type: type,
             limit: limit,
             offset: limit* ( page - 1 )
         };
@@ -62,6 +65,41 @@ module.exports = function() {
 
             if (status >= 200 && status < 300) {
                 callback( null, response );
+            } else {
+                err = new Error();
+                err.message = response.error || response.message;
+                err.status = status;
+                callback( err );
+            }
+        } );
+    };
+
+    this.getNumberPriceByCountry = function ( params, callback ) {
+        var country = params.countryIso;
+        var type = params.type || NUMBER_TYPES.LOCAL;
+        var options = {
+            country_iso: country
+        };
+
+        api.get_pricing(options, function (status, response) {
+            var err;
+            var price;
+
+            if (status >= 200 && status < 300) {
+
+                if (response && response.phone_numbers && (response.phone_numbers[type] !== undefined)) {
+                    price = response.phone_numbers[type]['rate'];
+                    price = parseFloat(price);
+
+                    callback( null, price );
+                } else {
+                    err = new Error();
+                    err.message = 'Invalid type "' + type +'"';
+                    err.status = 400;
+
+                    callback( err );
+                }
+
             } else {
                 err = new Error();
                 err.message = response.error || response.message;

@@ -84,16 +84,49 @@ module.exports = function () {
         };
 
         nexmo.searchNumbers( options, function ( err, result ) {
+            var resultObj;
+            var numbers;
+
             if ( err ) {
                 return callback( err );
             }
 
-            callback( _.map( result.numbers, function ( item ) {
+            numbers = _.map( result.numbers, function ( item ) {
                 return {
                     number: item.msisdn,
                     countryIso: item.country
                 }
-            }) )
+            });
+
+            resultObj = {
+                count: result.count,
+                numbers: numbers
+            };
+
+            callback( null, resultObj);
+        });
+    };
+
+    this.getNumberPriceByCountry = function ( params, callback ) {
+        var country = params.countryIso;
+
+        nexmo.getPricing(country, function (err, response) {
+            var price;
+
+            if (err) {
+                return callback(err);
+            }
+
+            if (!response || (response.mt === undefined)) {
+                err = new Error();
+                err.message = '"mt" was not defined';
+                err.status = 400;
+
+                callback( err );
+            } else {
+                price = parseFloat(response.mt);
+                callback(null, price);
+            }
         });
     };
 
