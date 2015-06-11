@@ -243,6 +243,7 @@ var VoiceMessagesModule = function (db) {
             //check the file format
             function (cb) {
                 var fileUrl;
+                var oldFileUrl;
                 var ticks = new Date().valueOf();
                 var transcodeParams;
                 var transcodeFileName;
@@ -265,8 +266,12 @@ var VoiceMessagesModule = function (db) {
                     if (err) {
                         return cb(err);
                     }
+
+                    //remove the old file:
+                    oldFileUrl = process.env.HOST + '/' + DEFAULT_AUDIO_URL + fileName;
+                    removeAudioFileByUrl(oldFileUrl);
+
                     fileUrl = process.env.HOST + '/' + DEFAULT_AUDIO_URL + transcodeFileName;
-                    removeAudioFileByUrl(fileUrl);
                     cb(null, fileUrl);
                 });
             }
