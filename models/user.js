@@ -1,6 +1,10 @@
 /**
  * Created by Roman on 12.02.2015.
  */
+
+var PROVIDERS = require('../constants/providerTypes');
+var _ = require('lodash');
+var re = new RegExp('^'+ _.values(PROVIDERS).join('$|^') + '$', 'i' );
 module.exports = function ( db ) {
     "use strict";
     //todo add indexes for number unique
@@ -13,9 +17,9 @@ module.exports = function ( db ) {
             type: String
             //, unique: true
         },
-        service: {
-            /*PLIVO or NEXMO*/
-            type: String
+        provider: {
+            type: String,
+            match: re
         },
         countryIso: {
             type: String,
