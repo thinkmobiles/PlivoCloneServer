@@ -9,12 +9,11 @@ var nexmo = new Nexmo({
     apiSecret: '8d9c2526',
      /*baseUrl: 'API_BASE_URL',
      useSSL: true,*/
-     debug: true
+     debug: true //TODO: remove from production
 });
 
-var outCallXmlRoute = process.env.HOST || 'http://134.249.164.53:8830' + '/control/nexmo/outbound/';
-var inCallXmlRoute = process.env.HOST || 'http://134.249.164.53:8830' + '/control/nexmo/inbound/';
-
+var outCallXmlRoute = process.env.HOST + '/control/nexmo/outbound/';
+var inCallXmlRoute = process.env.HOST + '/control/nexmo/inbound/';
 
 module.exports = function () {
 
