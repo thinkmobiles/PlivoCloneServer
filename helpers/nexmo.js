@@ -36,6 +36,11 @@ module.exports = function () {
         };
 
         nexmo.sendSMSMessage( options, function( err, response ) {
+            var status = 0;
+            var price = 0;
+            var errMsg;
+            var i;
+
             if ( err ) {
                 err = new Error('NEXMO: ' + err.message);
                 err.status = 400;
@@ -48,22 +53,41 @@ module.exports = function () {
                 err = new Error('No response Data');
                 err.status = 400;
 
-                return callback(err);
+                return callback( err );
             }
 
-            if ( parseInt( response.messages.status )  ) {
-                err = new Error( response.messages['error-text'] );
+            if ( response.messages.length ) {
+                for ( i = response.messages.length -1 ; i>=0; i-- ) {
+                    if ( response.messages[i].status  !== '0' ) {
+                        status = parseInt( response.messages[i].status );
+                        errMsg = response.messages[i]['error-text'];
+                        break;
+                    }
+
+                    price =+ parseFloat( response.messages[i]['message-price'] )
+                }
+            }
+
+            if ( status  ) {
+                err = new Error( errMsg );
                 err.status = 400;
 
                 return callback( err );
             }
 
+            if ( process.env.NODE_ENV === 'development' ) {
+                console.log(
+                    '------------------------\n' +
+                    'NEXMO OUTBUND MSG\n' +
+                    'STATUS: ', response, '\nError: ', err
+                );
+            }
 
             callback(
                 null,
                 {
-                    price: response.messages['message-price'],
-                    id: response.messages['message-id'],
+                    price: price,
+                    count: parseInt(response['message-count']),
                     service: 'NEXMO'
                 }
             );
@@ -158,7 +182,6 @@ module.exports = function () {
             answer_method: 'POST'
         };
 
-        console.log(JSON.stringify(options));
 
         nexmo.voiceCall( options, function ( err, result ) {
             if (err) {

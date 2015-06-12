@@ -117,6 +117,10 @@ mainDb.once( 'open', function callback() {
     io.on('connection', function (socket) {
         var socketConnection;
 
+        if ( process.env.NODE_ENV === 'development' ) {
+            console.log('Socket connected id: ', socket.id );
+        }
+
         //app.set('io', io);
 
         socketConnection = new SocketConnection(mainDb);
@@ -124,8 +128,17 @@ mainDb.once( 'open', function callback() {
         socket.emit('connectedToServer', {success: 'Success'});
 
         socket.on('authorize', function (data) {
+
             data.socketId = socket.id; //TODO remove if ROOM work
             socket.join( data.uId );
+
+            if ( process.env.NODE_ENV === 'development' ) {
+                console.log(
+                    'Socket authorize:\n' +
+                    'id: ', socket.id,'\n' +
+                    'uId(ROOM): ', data.uId, '\n' +
+                    'clients: ', io.sockets.adapter.rooms[ data.uId ] );
+            }
 
             socketConnection.registerSocket(data);  //TODO remove if ROOM work
         });
