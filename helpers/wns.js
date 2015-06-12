@@ -1,38 +1,84 @@
+'use strict';
+
 /**
  * Created by eriy on 12.03.2015.
  */
-var wns = require( 'wns' );
+var wns = require('wns');
 
-module.exports = function() {
-    var currentAccessToken;
-    var client_id = 'ms-app://s-1-15-2-2329854933-3467371773-235525189-2707151496-3265958890-3459980472-2316457019';
-    var client_secret = 'c4JJzw7O3W5ugNwayTWbsxVR7bp6XZy5';
+var WNS = function (clientId, clientSecret) {
+    var self = this;
     var notificationType = 'ToastText03';
 
-    this.sendPush = function( channelUrl, header, msg, launch, callback ) {
-        var sendingMessageObject = {};
-        var connectionOptions = {
-            client_id: client_id,
-            client_secret: client_secret,
-            accessToken: currentAccessToken,
-            launch: launch
-        };
+    this.clientId = clientId;
+    this.clientSecret = clientSecret;
+    this.accessToken = ''; //it must be a string
 
-        sendingMessageObject.type = notificationType;
-        sendingMessageObject.text1 = header;
-        sendingMessageObject.text2 = msg;
+    //this.sendPush = function( channelUrl, header, msg, launch, callback ) {
+    this.sendPush = function (channelUrl, msg, options, callback) {
+        var err;
+        var connectionOptions;
+        var messageObject;
 
-        if (! channelUrl || !( typeof(channelUrl) === 'string') ) {
-            return false
+        if (!channelUrl || !( typeof(channelUrl) === 'string')) {
+            err = new Error();
+            err.message = '"channelUrl" is undefined';
+            err.status = 400;
+
+            if (callback && (typeof callback === 'function')) {
+                callback(err);
+            }
+            return console.error(err);
         }
 
-        wns.sendToast( channelUrl, sendingMessageObject, connectionOptions, function(err, result) {
-            currentAccessToken = err ? err.newAccessToken : result.newAccessToken;
-            if ( err ) {
-                return callback( err.statusCode );
+        if (msg === undefined) {
+            err = new Error();
+            err.message = '"msg" is undefined';
+            err.status = 400;
+
+            if (callback && (typeof callback === 'function')) {
+                callback(err);
             }
-            callback( null );
+            return console.error(err);
+        }
+
+        connectionOptions = {
+            client_id: self.clientId,
+            client_secret: self.clientSecret,
+            accessToken: self.accessToken
+        };
+
+        messageObject = {
+            type: (options && options.type) ? options.type : notificationType,
+            text2: msg
+        };
+
+        if (options && options.launch) {
+            connectionOptions.launch = options.launch;
+        }
+
+        if (options && options.header) {
+            messageObject.text1 = options.header;
+        }
+
+        wns.sendToast(channelUrl, messageObject, connectionOptions, function (err, result) {
+            if (err) {
+
+                if (err.newAccessToken) {
+                    self.accessToken = err.newAccessToken;
+                }
+
+                if (callback && (typeof callback === 'function')) {
+                    callback(err);
+                }
+
+            } else {
+
+                if (callback && (typeof callback === 'function')) {
+                    callback(null, result);
+                }
+            }
         });
     }
+};
 
-}
+module.exports = WNS;

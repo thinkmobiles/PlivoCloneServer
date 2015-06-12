@@ -43,7 +43,7 @@ module.exports = function () {
                 return callback( err );
             }
 
-            if ( response && response.message ) {
+            if ( ! response || ! response.messages ) {
 
                 err = new Error('No response Data');
                 err.status = 400;
@@ -51,8 +51,8 @@ module.exports = function () {
                 return callback(err);
             }
 
-            if ( response.message.status != 0 ) {
-                err = new Error( response.message.error-text );
+            if ( parseInt( response.messages.status )  ) {
+                err = new Error( response.messages['error-text'] );
                 err.status = 400;
 
                 return callback( err );
@@ -62,8 +62,8 @@ module.exports = function () {
             callback(
                 null,
                 {
-                    price: response.message.message-price,
-                    id: response.message.message-id,
+                    price: response.messages['message-price'],
+                    id: response.messages['message-id'],
                     service: 'NEXMO'
                 }
             );
@@ -166,6 +166,7 @@ module.exports = function () {
             }
 
             console.log( result );
+            /*callback( null, result )*/
         })
     };
 
