@@ -6,9 +6,12 @@ var router = express.Router();
 var MessageHandler = require('../handlers/messages');
 var SessionHandler = require('../handlers/sessions');
 
+var NewMessageHandler = require('../handlers/newMessages');
+
 module.exports = function(db, app) {
     var session = new SessionHandler(db);
     var messages = new MessageHandler(db, app);
+    var newMessages = new NewMessageHandler( app, db );
 
     router.post( '/send', session.authenticatedUser, messages.sendMessage );
     router.get('/unread/:num1/:num2', session.authenticatedUser, messages.getUnReadCount );
@@ -22,6 +25,7 @@ module.exports = function(db, app) {
     router.get( '/lastchats', session.authenticatedUser, messages.getLastByChats );
     router.get( '/recent', session.authenticatedUser, messages.getRecentCompanion );
     router.delete( '/:n1/:n2', session.authenticatedUser, messages.deleteChat);
+    router.post('/plivo', newMessages.getPlivoInboundSMS );
 
 
     return router;

@@ -122,18 +122,25 @@ mainDb.once( 'open', function callback() {
         socketConnection = new SocketConnection(mainDb);
 
         socket.emit('connectedToServer', {success: 'Success'});
-        socket.on('publishMessage', function (data) {
-        });
+
         socket.on('authorize', function (data) {
-            data.socketId = socket.id;
-            socketConnection.registerSocket(data);
+            data.socketId = socket.id; //TODO remove if ROOM work
+            socket.join( data.uId );
+
+            socketConnection.registerSocket(data);  //TODO remove if ROOM work
         });
         socket.on('disconnect', function () {
+
+            /* TODO test rooms -> remove*/
             var data = {
                 socketId: socket.id
             };
             socketConnection.unregisterSocket( data );
-            console.log('Socket disconnected ' + socket.id);
+
+            /*TODO remove*/
+            if ( process.env.NODE_ENV === 'development' ) {
+                console.log('Socket disconnected ' + socket.id);
+            }
         });
     });
 } );
