@@ -75,13 +75,13 @@ module.exports = function () {
                 return callback( err );
             }
 
-           /* if ( process.env.NODE_ENV === 'development' ) {*/
+            if ( process.env.NODE_ENV === 'development' ) {
                 console.log(
                     '------------------------\n' +
                     'NEXMO OUTBUND MSG\n' +
                     'STATUS: ', response, '\nError: ', err
                 );
-           /* }*/
+            }
 
             callback(
                 null,
