@@ -11,6 +11,6 @@ module.exports = function (db) {
     var push = new Push(db);
 
     router.post( '/channel', session.authenticatedUser, push.newChannel );
-
+    router.get('/test', push.sendTestPush);
     return router;
 };
