@@ -9,6 +9,7 @@ var BadRequestModule = function () {
     var INVALID_EMAIL = "Invalid email address.";
     var EMAIL_IN_USE = 'Email in use. Please input another email address.';
     var DUPLICATE_ENTRY = 'Duplicate entry.';
+    var NOT_ENOUGH_CREDITS = 'Not enough credits';
 
     function Errors(options) {
         //http://j-query.blogspot.com/2014/03/custom-error-objects-in-javascript.html
@@ -34,6 +35,30 @@ var BadRequestModule = function () {
     }
 
     Errors.prototype = Object.create(Error.prototype);
+
+    this.NotEnCredits = function( options ) {
+        var errOptions;
+
+        if (options) {
+            errOptions = options;
+        } else {
+            errOptions = {};
+        }
+
+        if (!errOptions.name) {
+            errOptions.name = "NotEnoughCredits";
+        }
+
+        if (!errOptions.message) {
+            errOptions.message = NOT_ENOUGH_CREDITS;
+        }
+
+        if ( !errOptions.status ) {
+            errOptions.status = 402;
+        }
+
+        return new Errors(errOptions);
+    };
 
     this.NotEnParams = function(options) {
         var errOptions;
