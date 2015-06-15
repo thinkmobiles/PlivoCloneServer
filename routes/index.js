@@ -39,10 +39,10 @@ module.exports = function(app, db) {
     app.use( '/voiceMessages', voiceMessages );
     app.use('/control', control );
 
-    if ( process.env.NODE_ENV === 'development' ) {
+    /*if ( process.env.NODE_ENV === 'development' ) {
         var testRouter = require('./testRoute')( app, db ) ;
         app.use('/test', testRouter );
-    };
+    };*/
 
     //<editor-fold desc="Deleting temporary files from NodeJS using fs">
     app.use(function (req, res, next) {
