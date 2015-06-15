@@ -78,7 +78,10 @@ mainDb.once( 'open', function callback() {
         name: 'testCall',
         secret: '1q2w3e4r5tdhgkdfhgdhgdlfhgkdlgh8j0jge4547hh',
         resave: true,
-        saveUninitialized: true,
+        saveUninitialized: false,
+        cookie: {
+            maxAge: 1000 * 60 * 60 * 24 * 365
+        },
         store: new MemoryStore( config )
     } ) );
 
