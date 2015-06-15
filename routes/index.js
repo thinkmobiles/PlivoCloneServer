@@ -1,3 +1,5 @@
+var _ = require('lodash');
+
 module.exports = function(app, db) {
     var logWriter = require('../modules/logWriter')();
     var models = require('../models/index')(db);
@@ -73,12 +75,13 @@ module.exports = function(app, db) {
             if(satus === 404 || satus === 401){
                 logWriter.log( '', err.message + '\n' + err.stack );
             }
-            res.status( satus).send();
+            res.status( satus).send({ error: _.omit(err, 'name', 'status') });
         } else {
             if(satus !== 401) {
                 logWriter.log( '', err.message + '\n' + err.stack );
             }
-            res.status( satus ).send( { error: err.message, stack: err.stack } );
+
+            res.status( satus ).send( { error: _.omit(err, 'name', 'status')/*, stack: err.stack*/ } );
         }
 
         if(satus === 401){
