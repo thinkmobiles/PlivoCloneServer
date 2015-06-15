@@ -8,6 +8,7 @@ var _ = require('lodash');
 var Push = require('../handlers/push');
 var PlivoHelper = require('../helpers/plivo');
 var NexmoHelper = require('../helpers/nexmo');
+var badRequests = require('../helpers/badRequests');
 var plivo = new PlivoHelper;
 var nexmo = new NexmoHelper;
 
@@ -264,8 +265,9 @@ module.exports = function( app, db ) {
                         options.price = parseInt( result );
 
                         if ( options.price > options.srcUser.credits ) {
-                            err = new Error('Not enough credits');
-                            err.status = 400;
+                            /*err = new Error();
+                            err.status = 402;*/
+                            err = badRequests.NotEnCredits();
 
                             return cb( err );
                         }
@@ -520,7 +522,7 @@ module.exports = function( app, db ) {
                 /* get ansver */
                 function ( options, cb ) {
                     var response = {
-                        success: "Message Sendt",
+                        success: "Message Sent",
                         credits: options.srcUser.credits,
                         message: options.conversation
                     };
