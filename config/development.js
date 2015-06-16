@@ -22,7 +22,10 @@ process.env.PLIVO_AUTH_ID = "MAYTRKODM5Y2ZINDVLOT";
 process.env.PLIVO_AUTH_TOKEN = "ZDNhZjZmYTZiZWU3NzJjNGZkOWYyMmY0YTA3ZGZk";
 
 //ffmpeg:
-process.env.FFMPEG_DIR = path.join('C:', 'Program Files', 'ffmpeg', 'bin');
-process.env.FFMPEG_BIN = path.join(process.env.FFMPEG_DIR, 'ffmpeg.exe');
-process.env.FFMPEG_PROBE = path.join(process.env.FFMPEG_DIR, 'ffprobe.exe');
+//process.env.FFMPEG_DIR = path.join('C:', 'Program Files', 'ffmpeg', 'bin');
+process.env.FFMPEG_DIR = path.join('usr', 'bin');
+//process.env.FFMPEG_BIN = path.join(process.env.FFMPEG_DIR, 'ffmpeg.exe');
+process.env.FFMPEG_BIN = path.join(process.env.FFMPEG_DIR, 'avconv');
+//process.env.FFMPEG_PROBE = path.join(process.env.FFMPEG_DIR, 'ffprobe.exe');
+process.env.FFMPEG_PROBE = path.join(process.env.FFMPEG_DIR, 'avprobe');
 

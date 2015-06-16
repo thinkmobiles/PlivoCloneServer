@@ -14,6 +14,8 @@ var nexmo = new Nexmo({
 
 var outCallXmlRoute = process.env.HOST + '/control/nexmo/outbound/';
 var inCallXmlRoute = process.env.HOST + '/control/nexmo/inbound/';
+var NUMBER_TYPES = require('../constants/numberTypes');
+var NUMBER_FEATURES = require('../constants/numberFeatures');
 
 module.exports = function () {
 
@@ -117,13 +119,14 @@ module.exports = function () {
             numbers = _.map( result.numbers, function ( item ) {
                 return {
                     number: item.msisdn,
-                    countryIso: item.country
+                    country: item.country,
+                    provider: 'NEXMO'
                 }
             });
 
             resultObj = {
                 count: result.count,
-                numbers: numbers
+                objects: numbers
             };
 
             callback( null, resultObj);
