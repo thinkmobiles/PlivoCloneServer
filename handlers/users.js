@@ -351,6 +351,13 @@ var User = function ( db ) {
         shaSumOld.update( oldPass );
         shaSumNew.update( newPass );
 
+        if ( shaSumOld.digest( 'hex' ) === shaSumNew.digest( 'hex' ) ) {
+            err = new Error('New password is the same as the old');
+            err.status = 409;
+
+            return res.status( err.status ).send( { success: err.message } );
+        }
+
         findObject = {
             "_id": userId,
             "password": shaSumOld.digest( 'hex' )

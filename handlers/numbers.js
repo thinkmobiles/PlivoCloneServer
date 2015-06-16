@@ -74,17 +74,6 @@ var Number = function (db) {
             } break;
             default: {} break;
         }
-
-        /*var params = {
-            //type: 'mobile',
-            services: 'sms',
-            country_iso: countryIso
-        };
-        p.search_phone_numbers( params, function ( status, response ) {
-            console.log( 'Status: ', status );
-            console.log( 'API Response:\n', response );
-            res.status( status ).send( response );
-        } );*/
     };
 
 
