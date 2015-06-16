@@ -613,8 +613,14 @@ var AddressBook = function(db) {
 
         res.sendFile(fileName, options, function (err) {
             if (err) {
-                //return res.status(500).end();
-                return next(err);
+                if (process.env.NODE_ENV === 'development') {
+                    console.log(
+                        'SendFile Error: ', err.message, '\n',
+                        'Stack: ', err.stack
+                    );
+                }
+
+                res.status( err.status).end();
             }
         })
     };

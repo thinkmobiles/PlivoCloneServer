@@ -871,6 +871,8 @@ var VoiceMessagesModule = function (db) {
                         'Stack: ', err.stack
                     );
                 }
+
+                res.status( err.status).end();
             }
         })
     };
