@@ -1,6 +1,6 @@
 'use strict';
 
 module.exports = {
-    PLIVO: 'plivo',
-    NEXMO: 'nexmo'
+    PLIVO: 'PLIVO',
+    NEXMO: 'NEXMO'
 };

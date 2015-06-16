@@ -141,7 +141,7 @@ var VoiceMessagesModule = function (db) {
                 if (callback && (typeof callback === 'function')) {
                     callback(err);
                 }
-            } else if (price > userModel.credits){
+            } else if (price > userModel.credits) {
                 if (callback && (typeof callback === 'function')) {
                     callback(badRequests.NotEnCredits());
                 }
@@ -177,12 +177,18 @@ var VoiceMessagesModule = function (db) {
     };
 
     this.findNumber = function (userModel, number, callback) {
-        var numberObj = _.find( userModel.numbers , function( item ) {
+        var numberObj = _.find(userModel.numbers, function (item) {
             return item.number === number;
         });
 
-        if (callback && (typeof callback === 'function')) {
-            callback(null, numberObj);
+        if (!numberObj) {
+            if (callback && (typeof callback === 'function')) {
+                callback(badRequests.NotFound({message: 'number was not found'}));
+            }
+        } else {
+            if (callback && (typeof callback === 'function')) {
+                callback(null, numberObj);
+            }
         }
     };
 
@@ -210,12 +216,12 @@ var VoiceMessagesModule = function (db) {
         ffmpeg.setFfmpegPath(process.env.FFMPEG_BIN);
         ffmpeg(from)
             .audioBitrate('128')
-            .on('error', function(err) {
+            .on('error', function (err) {
                 if (callback && (typeof callback === 'function')) {
                     callback(err);
                 }
             })
-            .on('end', function() {
+            .on('end', function () {
                 if (callback && (typeof callback === 'function')) {
                     callback();
                 }
@@ -491,7 +497,7 @@ var VoiceMessagesModule = function (db) {
                     msgType: CONVERSATION_TYPES.VOICE
                 };
 
-                self.checkCredits(checkParams, function(err) {
+                self.checkCredits(checkParams, function (err) {
                     if (err) {
                         return cb(err);
                     }
@@ -600,7 +606,7 @@ var VoiceMessagesModule = function (db) {
 
                 result = {
                     conversation: conversation,
-                     credits: credits
+                    credits: credits
                 };
 
                 if (callback && (typeof callback === 'function')) {
@@ -618,31 +624,51 @@ var VoiceMessagesModule = function (db) {
         var fileUrl = params.fileUrl;
         var srcUserId = srcUser._id;
         var chat = self.calculateChatString(src, dst);
+        var internal = false;
         //var credits;
 
         async.waterfall([
 
-            //find the provider:
+            //find numberObj:
             function (cb) {
-                var criteria = {
-                    number: src
-                };
-
-                srcUser.numbers.find(criteria, function (err, number) {
+                self.findNumber(srcUser, src, function (err, number) {
                     if (err) {
                         return cb(err);
-                    } else if (!number) {
-                        return cb(badRequests.NotFound({message: 'number was not found'}));
                     }
-
-                    if (number.provider === PROVIDER_TYPES.PLIVO) {
-                        return cb(null, plivo);
-                    } else if (number.provider === PROVIDER_TYPES.NEXMO) {
-                        return cb(null, nexmo);
-                    } else {
-                        return cb(badRequests.IncorrectProvider());
-                    }
+                    cb(null, number);
                 });
+            },
+
+            //check credits:
+            function (number, cb) {
+                var checkParams = {
+                    userModel: params.srcUser,
+                    number: number,
+                    internal: internal, //true
+                    msgType: CONVERSATION_TYPES.VOICE
+                };
+
+                self.checkCredits(checkParams, function (err) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    cb(null, number);
+                });
+            },
+
+            //find the provider:
+            function (number, cb) {
+                if (!number || !number.provider) {
+                    return cb(badRequests.InvalidValue({param: 'number.provider', value: number}));
+                }
+
+                if (number.provider === PROVIDER_TYPES.PLIVO) {
+                    return cb(null, plivo);
+                } else if (number.provider === PROVIDER_TYPES.NEXMO) {
+                    return cb(null, nexmo);
+                } else {
+                    return cb(badRequests.IncorrectProvider());
+                }
             },
 
             //create call:
@@ -657,6 +683,8 @@ var VoiceMessagesModule = function (db) {
                 if (!provider || !provider.createCall) {
                     return cb(badRequests.InvalidValue({param: 'provider', value: provider}));
                 }
+
+                //return cb();
 
                 provider.createCall(callParams, function (err, result) {
                     if (err) {
@@ -698,9 +726,19 @@ var VoiceMessagesModule = function (db) {
                     }
                     cb(null, savedModel);
                 });
+            },
+
+            //subtract credits:
+            function (conversationModel, cb) {
+                messagesHandler.subCredits(srcUser, internal, src, function (err, credits) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    cb(null, conversationModel, credits);
+                });
             }
 
-        ], function (err, conversation) {
+        ], function (err, conversation, credits) {
             var result;
 
             if (err) {
@@ -709,8 +747,8 @@ var VoiceMessagesModule = function (db) {
                 }
             } else {
                 result = {
-                    conversation: conversation/*,
-                     credits: creadits*/
+                    conversation: conversation,
+                    credits: credits
                 };
 
                 if (callback && (typeof callback === 'function')) {
@@ -741,6 +779,10 @@ var VoiceMessagesModule = function (db) {
             err.status = 400;
 
             return next(err);
+        }
+
+        if (src[0] !== '+') {
+            src = '+' + src;
         }
 
         async.parallel({
@@ -802,7 +844,11 @@ var VoiceMessagesModule = function (db) {
                             }
                             return next(err);
                         }
-                        res.status(201).send({success: 'message created', message: result.conversation, credits: result.credits});
+                        res.status(201).send({
+                            success: 'message created',
+                            message: result.conversation,
+                            credits: result.credits
+                        });
                     });
                 } else {
                     self.sendExternalMessage(sendMessageParams, function (err, result) {
@@ -812,7 +858,11 @@ var VoiceMessagesModule = function (db) {
                             }
                             return next(err);
                         }
-                        res.status(201).send({success: 'message created', message: result.conversation});
+                        res.status(201).send({
+                            success: 'message created',
+                            message: result.conversation,
+                            credits: result.credits
+                        });
                     });
                 }
 
@@ -836,6 +886,11 @@ var VoiceMessagesModule = function (db) {
     this.answerPlivo = function (req, res, next) {
         var fileUrl = req.query.file;
         var xml = plivo.generatePlayXML(fileUrl);
+
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('>>> ', req.originalUrl);
+            console.log(util.inspect(req.body, { showHidden: true, depth: 5 }));
+        }
 
         res.status(200).send(xml);
     };
@@ -866,6 +921,14 @@ var VoiceMessagesModule = function (db) {
             err.message = NOT_ENAUGH_PARAMS + '. Required params: "src", "dst", "recordUrl", "io";';
             err.status = 400;
             return callback(err);
+        }
+
+        if (src[0] !== '+') {
+            src = '+' + src;
+        }
+
+        if (dst[0] !== '+') {
+            dst = '+' + dst;
         }
 
         async.waterfall([
@@ -994,10 +1057,20 @@ var VoiceMessagesModule = function (db) {
     };
 
     this.plivoRecordCallback = function (req, res, next) {
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('>>> ', req.originalUrl);
+            console.log(util.inspect(req.body, { showHidden: true, depth: 5 }));
+        }
+
         var options = req.body;
-        var voiceMessageParams = {
-            src: options.From,
-            dst: options.To,
+        var src = options.From;
+        var dst = options.To;
+        var recordUrl = options.recordUrl;
+        var voiceMessageParams;
+
+        voiceMessageParams = {
+            src: src,
+            dst: src,
             recordUrl: options.RecordUrl,
             io: req.app.get('io')
         };
