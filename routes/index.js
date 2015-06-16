@@ -1,3 +1,5 @@
+var _ = require('lodash');
+
 module.exports = function(app, db) {
     var logWriter = require('../modules/logWriter')();
     var models = require('../models/index')(db);
@@ -39,6 +41,11 @@ module.exports = function(app, db) {
     app.use( '/voiceMessages', voiceMessages );
     app.use('/control', control );
 
+    /*if ( process.env.NODE_ENV === 'development' ) {
+        var testRouter = require('./testRoute')( app, db ) ;
+        app.use('/test', testRouter );
+    };*/
+
     //<editor-fold desc="Deleting temporary files from NodeJS using fs">
     app.use(function (req, res, next) {
         res.on('finish', function () {
@@ -68,12 +75,13 @@ module.exports = function(app, db) {
             if(satus === 404 || satus === 401){
                 logWriter.log( '', err.message + '\n' + err.stack );
             }
-            res.status( satus );
+            res.status( satus).send({ error: _.omit(err, 'name', 'status') });
         } else {
             if(satus !== 401) {
                 logWriter.log( '', err.message + '\n' + err.stack );
             }
-            res.status( satus ).send( err.message + '\n' + err.stack );
+
+            res.status( satus ).send( { error: _.omit(err, 'name', 'status')/*, stack: err.stack*/ } );
         }
 
         if(satus === 401){

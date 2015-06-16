@@ -13,14 +13,13 @@ module.exports = function(db, app) {
     var messages = new MessageHandler(db, app);
     var newMessages = new NewMessageHandler( app, db );
 
-    router.post( '/send', session.authenticatedUser, messages.sendMessage );
+    /*router.post( '/send', session.authenticatedUser, messages.sendMessage );*/
+    router.post( '/send', session.authenticatedUser, newMessages.sendMessage );
     router.get('/unread/:num1/:num2', session.authenticatedUser, messages.getUnReadCount );
     router.put('/read', session.authenticatedUser, messages.setRead );
     router.get( '/get/:message_uuid', session.authenticatedUser, messages.messageInfo );
-    //router.get( '/lastConversations', session.authenticatedUser, messages.getLastConversations );
     router.get( '/conversations/:src/:dst', session.authenticatedUser, messages.getConversations );
-    //router.get( '/conversations', session.authenticatedUser, messages.getConversations );
-    router.post( '/received', session.authenticatedUser, messages.postMessage );
+    /*router.post( '/received', session.authenticatedUser, messages.postMessage );*/
 
     router.get( '/lastchats', session.authenticatedUser, messages.getLastByChats );
     router.get( '/recent', session.authenticatedUser, messages.getRecentCompanion );

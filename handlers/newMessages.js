@@ -8,6 +8,7 @@ var _ = require('lodash');
 var Push = require('../handlers/push');
 var PlivoHelper = require('../helpers/plivo');
 var NexmoHelper = require('../helpers/nexmo');
+var badRequests = require('../helpers/badRequests');
 var plivo = new PlivoHelper;
 var nexmo = new NexmoHelper;
 
@@ -264,8 +265,9 @@ module.exports = function( app, db ) {
                         options.price = parseInt( result );
 
                         if ( options.price > options.srcUser.credits ) {
-                            err = new Error('Not enough credits');
-                            err.status = 400;
+                            /*err = new Error();
+                            err.status = 402;*/
+                            err = badRequests.NotEnCredits();
 
                             return cb( err );
                         }
@@ -520,7 +522,7 @@ module.exports = function( app, db ) {
                 /* get ansver */
                 function ( options, cb ) {
                     var response = {
-                        success: "Success",
+                        success: "Message Sent",
                         credits: options.srcUser.credits,
                         message: options.conversation
                     };
@@ -540,6 +542,24 @@ module.exports = function( app, db ) {
             }
         )
     };
+
+    this.sendMessage = function( req, res, next ) {
+        var params = req.body;
+        var options = {
+            userId : req.session.uId,
+            src: params.src,
+            dst: params.dst,
+            msg: params.text
+        };
+
+        self.sendTEXTMessage( options, function( err, result ) {
+            if ( err ) {
+                return next( err );
+            }
+            res.status( 200 ).send( result );
+        })
+
+    }
 
     this.getPlivoInboundSMS = function( req, res, next ) {
         var body = req.body;
@@ -585,7 +605,7 @@ module.exports = function( app, db ) {
 
                         options.dstUser = dstUser;
 
-                        cb( null, options )
+                        cb( null, options );
                     } )
                 },
 
@@ -627,6 +647,7 @@ module.exports = function( app, db ) {
 
                 },
 
+                /* send push & socket*/
                 function( params, cb ) {
                     var dstUserId = params.dstUserId;
                     var src = params.src;

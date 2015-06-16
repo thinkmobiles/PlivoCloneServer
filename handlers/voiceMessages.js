@@ -20,13 +20,16 @@ var _ = require('lodash');
 var util = require('util');
 var request = require('request');
 var sox = require('sox'); //https://www.npmjs.com/package/sox
+var ffmpeg = require('fluent-ffmpeg'); //https://github.com/fluent-ffmpeg/node-fluent-ffmpeg
 var FileStorage = require('../modules/fileStorage');
 var PushHandler = require('../handlers/push');
 var SocketConnectionHandler = require('../handlers/socketConnections');
 var UserHandler = require('../handlers/users');
 var MessagesHandler = require('../handlers/messages');
+var NewMessagesHandler = require('../handlers/newMessages');
 var PlivoModule = require('../helpers/plivo');
 var NexmoModule = require('../helpers/nexmo');
+var badRequests = require('../helpers/badRequests');
 
 var VoiceMessagesModule = function (db) {
     var fileStor = new FileStorage();
@@ -34,6 +37,7 @@ var VoiceMessagesModule = function (db) {
     var userHandler = new UserHandler(db);
     var pushHandler = new PushHandler(db);
     var messagesHandler = new MessagesHandler(db);
+    var newMessagesHandler = new NewMessagesHandler({}, db); //TODO: ...
     var AddressBook = db.model('addressbook');
     var Conversation = db.model('converstion');
     var plivo = new PlivoModule();
@@ -94,6 +98,61 @@ var VoiceMessagesModule = function (db) {
         });
     };
 
+    this.checkCredits = function (params, callback) {
+        var err;
+        var userModel;
+        var number;
+        var priceParams;
+
+        if (!params
+            || !params.userModel
+            || !params.number
+            || (params.internal === undefined)
+            || !params.msgType) {
+            err = badRequests.NotEnParams({reqParams: ['userModel', 'number', 'internal', 'msgType']});
+        }
+
+        userModel = params.userModel;
+        number = params.number;
+
+        if (userModel.credits === undefined) {
+            err = badRequests.InvalidValue({param: 'userModel', value: userModel});
+        }
+
+        if (!number.countryIso) {
+            err = badRequests.InvalidValue({param: 'number', value: number});
+        }
+
+        if (err) {
+            if (callback && (typeof callback === 'function')) {
+                return callback(err);
+            }
+            return;
+        }
+
+        priceParams = {
+            countryIso: number.countryIso,
+            internal: params.internal,
+            msgType: params.msgType
+        };
+
+        messagesHandler.getPrice(priceParams, function (err, price) {
+            if (err) {
+                if (callback && (typeof callback === 'function')) {
+                    callback(err);
+                }
+            } else if (price > userModel.credits){
+                if (callback && (typeof callback === 'function')) {
+                    callback(badRequests.NotEnCredits());
+                }
+            } else {
+                if (callback && (typeof callback === 'function')) {
+                    callback();
+                }
+            }
+        });
+    };
+
     this.sendTestForm = function (req, res, next) {
         var html = '';
 
@@ -117,6 +176,16 @@ var VoiceMessagesModule = function (db) {
         res.send(html);
     };
 
+    this.findNumber = function (userModel, number, callback) {
+        var numberObj = _.find( userModel.numbers , function( item ) {
+            return item.number === number;
+        });
+
+        if (callback && (typeof callback === 'function')) {
+            callback(null, numberObj);
+        }
+    };
+
     function getAudioFileInfo(params, callback) {
         sox.identify(params.srcFilePath, function (err, results) {
             /* results looks like:
@@ -136,6 +205,26 @@ var VoiceMessagesModule = function (db) {
     function convertTheAudioFile(params, callback) {
         var from = params.srcFilePath;
         var to = params.dstFilePath;
+
+        ffmpeg.setFfprobePath(process.env.FFMPEG_PROBE);
+        ffmpeg.setFfmpegPath(process.env.FFMPEG_BIN);
+        ffmpeg(from)
+            .audioBitrate('128')
+            .on('error', function(err) {
+                if (callback && (typeof callback === 'function')) {
+                    callback(err);
+                }
+            })
+            .on('end', function() {
+                if (callback && (typeof callback === 'function')) {
+                    callback();
+                }
+            }).save(to);
+    };
+
+    function convertTheAudioFileSOX(params, callback) {
+        var from = params.srcFilePath;
+        var to = params.dstFilePath;
         var format = params.format || 'mp3';
 
         var job = sox.transcode(from, to, {
@@ -151,7 +240,7 @@ var VoiceMessagesModule = function (db) {
                 console.error(err);
             }
             if (callback && (typeof callback === 'function')) {
-                callback(error);
+                callback(err);
             }
         });
 
@@ -163,8 +252,8 @@ var VoiceMessagesModule = function (db) {
 
         job.on('src', function (info) {
             if (process.env.NODE_ENV !== 'production') {
-                console.log('>>> src: ');
-                console.dir(info);
+                /*console.log('>>> src: ');
+                 console.dir(info);*/
                 /* info looks like:
                  {
                  format: 'wav',
@@ -180,8 +269,8 @@ var VoiceMessagesModule = function (db) {
 
         job.on('dest', function (info) {
             if (process.env.NODE_ENV !== 'production') {
-                console.log('>>> dest: ');
-                console.dir(info);
+                /*console.log('>>> dest: ');
+                 console.dir(info);*/
                 /* info looks like:
                  {
                  sampleRate: 44100,
@@ -197,7 +286,7 @@ var VoiceMessagesModule = function (db) {
 
         job.on('end', function () {
             if (process.env.NODE_ENV !== 'production') {
-                console.log("all done");
+                /*console.log("all done");*/
             }
             if (callback && (typeof callback === 'function')) {
                 callback();
@@ -210,7 +299,7 @@ var VoiceMessagesModule = function (db) {
     function saveTheAudioFile(file, callback) {
         var ticks = new Date().valueOf();
         var dirPath = process.env.UPLOAD_DIR;
-        var extension = path.extname(file.path) || DEFAULT_AUDIO_EXTENSION;
+        var extension = path.extname(file.path);
         var fileName = DEFAULT_AUDIO_FILE_NAME + '_' + ticks + extension;
         var filePath = path.join(dirPath, fileName);
 
@@ -365,7 +454,7 @@ var VoiceMessagesModule = function (db) {
         var srcUserId = srcUser._id;
         var dstUserId = companion._id;
         var chat = self.calculateChatString(src, dst);
-        //var credits; // send with response
+        var internal = true;
 
         async.waterfall([
 
@@ -376,6 +465,33 @@ var VoiceMessagesModule = function (db) {
                     number: src
                 };
                 self.checkBlockedNumbers(checkParams, function (err) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    cb();
+                });
+            },
+
+            //find numberObj:
+            function (cb) {
+                self.findNumber(srcUser, src, function (err, number) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    cb(null, number);
+                });
+            },
+
+            //check credits:
+            function (number, cb) {
+                var checkParams = {
+                    userModel: params.srcUser,
+                    number: number,
+                    internal: internal, //true
+                    msgType: CONVERSATION_TYPES.VOICE
+                };
+
+                self.checkCredits(checkParams, function(err) {
                     if (err) {
                         return cb(err);
                     }
@@ -461,9 +577,19 @@ var VoiceMessagesModule = function (db) {
                 }
 
                 cb(null, conversationModel);
+            },
+
+            //subtract credits:
+            function (conversationModel, cb) {
+                messagesHandler.subCredits(srcUser, internal, src, function (err, credits) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    cb(null, conversationModel, credits);
+                });
             }
 
-        ], function (err, conversation) {
+        ], function (err, conversation, credits) {
             var result;
 
             if (err) {
@@ -473,8 +599,8 @@ var VoiceMessagesModule = function (db) {
             } else {
 
                 result = {
-                    conversation: conversation/*,
-                     credits: credits*/
+                    conversation: conversation,
+                     credits: credits
                 };
 
                 if (callback && (typeof callback === 'function')) {
@@ -482,7 +608,6 @@ var VoiceMessagesModule = function (db) {
                 }
             }
         });
-
     };
 
     this.sendExternalMessage = function (params, callback) {
@@ -497,8 +622,31 @@ var VoiceMessagesModule = function (db) {
 
         async.waterfall([
 
-            //create call
+            //find the provider:
             function (cb) {
+                var criteria = {
+                    number: src
+                };
+
+                srcUser.numbers.find(criteria, function (err, number) {
+                    if (err) {
+                        return cb(err);
+                    } else if (!number) {
+                        return cb(badRequests.NotFound({message: 'number was not found'}));
+                    }
+
+                    if (number.provider === PROVIDER_TYPES.PLIVO) {
+                        return cb(null, plivo);
+                    } else if (number.provider === PROVIDER_TYPES.NEXMO) {
+                        return cb(null, nexmo);
+                    } else {
+                        return cb(badRequests.IncorrectProvider());
+                    }
+                });
+            },
+
+            //create call:
+            function (provider, cb) {
                 var callParams = {
                     srcUser: srcUser,
                     src: src,
@@ -506,7 +654,11 @@ var VoiceMessagesModule = function (db) {
                     fileUrl: fileUrl
                 };
 
-                plivo.createCall(callParams, function (err, result) {
+                if (!provider || !provider.createCall) {
+                    return cb(badRequests.InvalidValue({param: 'provider', value: provider}));
+                }
+
+                provider.createCall(callParams, function (err, result) {
                     if (err) {
                         return cb(err);
                     }
@@ -645,13 +797,19 @@ var VoiceMessagesModule = function (db) {
                 if (results && results.dstUser) {
                     self.sendInternalMessage(sendMessageParams, function (err, result) {
                         if (err) {
+                            if (results.fileUrl) {
+                                removeAudioFileByUrl(results.fileUrl);
+                            }
                             return next(err);
                         }
-                        res.status(201).send({success: 'message created', message: result.conversation});
+                        res.status(201).send({success: 'message created', message: result.conversation, credits: result.credits});
                     });
                 } else {
                     self.sendExternalMessage(sendMessageParams, function (err, result) {
                         if (err) {
+                            if (results.fileUrl) {
+                                removeAudioFileByUrl(params.fileUrl);
+                            }
                             return next(err);
                         }
                         res.status(201).send({success: 'message created', message: result.conversation});
@@ -659,8 +817,7 @@ var VoiceMessagesModule = function (db) {
                 }
 
             }
-        )
-        ;
+        );
     };
 
     this.getAudioFile = function (req, res, next) {

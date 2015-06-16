@@ -14,7 +14,7 @@ var AddressBook = function(db) {
     var newObjectId = mongoose.Types.ObjectId;
     var fileStor = new FileStorage();
     var crypto = require('crypto');
-
+    var badRequests = require('../helpers/badRequests');
 
     this.getAddressBook = function (req, res, next) {
         var desc = (req.query.desc == 0) ? 1 : -1;
@@ -95,12 +95,7 @@ var AddressBook = function(db) {
             if (err) {
                 return next(err);
             }
-
-            if (entry) {
-                return res.status(200).send({success: 'contact ' + companion + ' deleted'});
-            }
-
-            res.status(404).send({success: 'contact ' + companion + ' not found'})
+            res.status(200).send({success: 'contact ' + companion + ' deleted'});
         })
     };
 
@@ -123,7 +118,8 @@ var AddressBook = function(db) {
                 return next(err);
             }
             if (entry) {
-                return res.status(409).send({success: "addressBook entry " + companion + 'exist'});
+                //return res.status(409).send({success: "addressBook entry " + companion + 'exist'});
+                return next(badRequests.DuplicateEntry({message: 'addressBook entry ' + companion + ' exist', status: 409}));
             }
 
             body.refUser = newObjectId(userId);
@@ -138,7 +134,8 @@ var AddressBook = function(db) {
                 existNumbers = lodash.intersection(allNumbers, numArr);
 
                 if (existNumbers.length) {
-                    return res.status(409).send({success: existNumbers})
+                    return res.status(409).send({success: existNumbers}); //TODO: ...
+                    //return next(badRequests.DuplicateEntry({message: 'addressBook entry ' + companion + ' exist', status: 409}));
                 }
 
                 //todo chack if undefined body.numbers generate []
@@ -177,7 +174,7 @@ var AddressBook = function(db) {
             }
 
             if (!entry) {
-                return res.status(403).send({success: companion + ' Nnot found'});
+                return res.status(403).send({success: companion + ' Nnot found'}); //TODO: ...
             }
 
             function numberIsOccupied(callback) {
@@ -278,7 +275,9 @@ var AddressBook = function(db) {
             async.waterfall(tasks, function (err, result) {
 
                 if (err) {
-                    return res.status(404).send(err.message);
+                    //return res.status(404).send(err.message); /TODO: status = 404
+                    err.status = 404;
+                    return next(err);
                 }
                 res.status(200).send({success: companion + " updated successfully"});
 
@@ -336,7 +335,8 @@ var AddressBook = function(db) {
             }
             existNumbers = lodash.intersection(allNumbers, numArr);
             if (existNumbers.length) {
-                return res.status(409).send( JSON.stringify( existNumbers ) )
+                //return res.status(409).send( JSON.stringify( existNumbers ) )
+                return next(badRequests.DuplicateEntry({message: JSON.stringify( existNumbers )}));
             }
 
             AddressBook.update(
@@ -613,10 +613,11 @@ var AddressBook = function(db) {
 
         res.sendFile(fileName, options, function (err) {
             if (err) {
-                return res.status(500).end();
+                //return res.status(500).end();
+                return next(err);
             }
         })
     };
-}
+};
 
 module.exports = AddressBook;

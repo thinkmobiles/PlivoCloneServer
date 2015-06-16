@@ -1,3 +1,5 @@
+var CONVERSATION_TYPES = require('./../constants/conversationTypes');
+
 var plivo = require( 'plivo-node' );
 var p = plivo.RestAPI( {
     "authId": process.env.PLIVO_AUTH_ID,
@@ -7,6 +9,7 @@ var async = require( 'async' );
 var lodash = require( 'lodash' );
 var util = require('util');
 var SocketConnectionHandler = require( '../handlers/socketConnections' );
+var badRequests = require('../helpers/badRequests');
 
 var Message = function ( db, app ) {
     var mongoose = require( 'mongoose' );
@@ -189,25 +192,26 @@ var Message = function ( db, app ) {
             }
 
             if ( ! result ) {
-                err = new Error('Bad Country ISO');
+                /*err = new Error('Bad Country ISO');
                 err.status = 400;
 
-                return callback( err );
+                return callback( err );*/
+                return callback(badRequests.InvalidValue({message: 'Bad Country ISO'}));
             }
 
-            if ( params.internal  && params.msgType  === 'TEXT' ) {
+            if ( params.internal  && params.msgType  === CONVERSATION_TYPES.TEXT) {
                 return callback( null, parseInt( result.msgPriceInternal ) );
             }
 
-            if ( params.internal  && params.msgType  === 'VOICE' ) {
+            if ( params.internal  && params.msgType  === CONVERSATION_TYPES.VOICE ) {
                 return callback( null, parseInt( result.msgPriceInternal ) );
             }
 
-            if ( !params.internal  && params.msgType  === 'TEXT' ) {
+            if ( !params.internal  && params.msgType  === CONVERSATION_TYPES.TEXT ) {
                 return callback( null, parseInt( result.msgPricePlivo ) );
             }
 
-            if ( !params.internal  && params.msgType  === 'VOICE' ) {
+            if ( !params.internal  && params.msgType  === CONVERSATION_TYPES.VOICE ) {
                 return callback( null, parseInt( result.msgPricePlivo ) );
             }
 
@@ -267,6 +271,8 @@ var Message = function ( db, app ) {
 
 
     this.subCredits = subCredits;
+
+    this.getPrice = getPrice;
 
     this.sendMessage = function ( req, res, next ) {
         /* var params = {
