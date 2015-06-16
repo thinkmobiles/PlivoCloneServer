@@ -242,6 +242,28 @@ var BadRequestModule = function () {
         return new Errors(errOptions);
     };
 
+    this.IncorrectProvider = function(options) {
+        var errOptions;
+        var errMessage;
+
+        if (options) {
+            errOptions = options;
+        } else {
+            errOptions = {};
+        }
+
+        if (!errOptions.name) {
+            errOptions.name = 'IncorrectProvider';
+        }
+
+        if (!errOptions.message) {
+            errMessage = 'Incorrect value for number\'s provider.';
+            errOptions.message = errMessage;
+        }
+
+        return new Errors(errOptions);
+    };
+
 };
 
 module.exports = new BadRequestModule();
