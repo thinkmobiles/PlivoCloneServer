@@ -10,7 +10,7 @@ module.exports = function (db) {
     //var session = new SessionHandler(db);
     var voiceMessagesHandler = new VoiceMessagesHandler(db);
 
-    router.post('/plivo/inbound', voiceMessagesHandler.inboundPlivo);
+    router.post('/plivo/inbound', voiceMessagesHandler.inboundPlivo); //answer_url
     router.post('/plivo/result',voiceMessagesHandler.plivoRecordCallback);
     router.post('/plivo/outbound', voiceMessagesHandler.answerPlivo);
     router.post('/plivo/hangup', voiceMessagesHandler.plivoHangup);
