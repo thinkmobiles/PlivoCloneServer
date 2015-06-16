@@ -350,6 +350,14 @@ module.exports = function( app, db ) {
         var pushEnabled = params.pushEnabled;
         var conversation = params.conversation;
 
+        if ( process.env.NODE_ENV === 'development') {
+            console.log(
+                'Internal SMS:\n',
+                'SRC: ', src, '\n',
+                'DST: ', dst, '\n'
+            );
+        }
+
         async.parallel(
             [
                 /* send MSG over socket*/
@@ -388,7 +396,14 @@ module.exports = function( app, db ) {
         var sendFunc;
         var sendParams;
 
-        console.log(provider);
+        if ( process.env.NODE_ENV === 'development') {
+            console.log(
+                'External SMS:\n',
+                'Provider: ', provider, '\n',
+                'SRC: ', src, '\n',
+                'DST: ', dst, '\n'
+            );
+        }
 
         if ( ! providerRegExp.test(provider) ) {
             err = badRequests.InvalidValue( { value: provider, param: 'provider' } );
@@ -564,8 +579,8 @@ module.exports = function( app, db ) {
 
     this.getPlivoInboundSMS = function( req, res, next ) {
         var body = req.body;
-        var from = body.From;
-        var to = body.To;
+        var from = '+' + body.From;
+        var to = '+' + body.To;
         var msg = body.Text;
 
         /*TODO remove*/
@@ -599,7 +614,7 @@ module.exports = function( app, db ) {
                         }
 
                         if (! dstUser ) {
-                            err = badRequests.InvalidValue( { param: 'dst', value: dst } );
+                            err = badRequests.InvalidValue( { param: 'dst', value: to } );
                             err = new Error('no user with ' + to + ' number');
                             err.status = 400;
                             return cb( err );

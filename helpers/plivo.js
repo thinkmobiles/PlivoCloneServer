@@ -9,6 +9,7 @@ var api = plivo.RestAPI( {
 var outCallXmlRoute = process.env.HOST + '/control/plivo/outbound/';
 var NUMBER_TYPES = require('../constants/numberTypes');
 var NUMBER_FEATURES = require('../constants/numberFeatures');
+var PLIVO_APP_ID = process.env.PLIVO_APP_ID || 14672593026521222;
 
 module.exports = function() {
 
@@ -122,9 +123,9 @@ module.exports = function() {
             number: params.number
         };
 
-        if ( params && params.app_id ) {
-            options.app_id = params.app_id
-        }
+
+        options.app_id = params.app_id || PLIVO_APP_ID;
+
 
         api.buy_phone_number( options , function ( status, response ) {
             var err;
