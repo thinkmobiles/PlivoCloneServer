@@ -865,7 +865,12 @@ var VoiceMessagesModule = function (db) {
 
         res.sendFile(fileName, options, function (err) {
             if (err) {
-                return next(err);
+                if (process.env.NODE_ENV === 'development') {
+                    console.log(
+                        'SendFile Error: ', err.message, '\n',
+                        'Stack: ', err.stack
+                    );
+                }
             }
         })
     };
