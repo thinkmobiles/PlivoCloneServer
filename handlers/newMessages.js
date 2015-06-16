@@ -579,8 +579,8 @@ module.exports = function( app, db ) {
 
     this.getPlivoInboundSMS = function( req, res, next ) {
         var body = req.body;
-        var from = body.From;
-        var to = body.To;
+        var from = '+' + body.From;
+        var to = '+' + body.To;
         var msg = body.Text;
 
         /*TODO remove*/
@@ -614,7 +614,7 @@ module.exports = function( app, db ) {
                         }
 
                         if (! dstUser ) {
-                            err = badRequests.InvalidValue( { param: 'dst', value: dst } );
+                            err = badRequests.InvalidValue( { param: 'dst', value: to } );
                             err = new Error('no user with ' + to + ' number');
                             err.status = 400;
                             return cb( err );
