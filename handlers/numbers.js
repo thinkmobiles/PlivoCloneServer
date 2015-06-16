@@ -5,31 +5,75 @@ var plivo = require( 'plivo-node' );
 var logWriter = require('../modules/logWriter')();
 var async = require('async');
 var lodash = require('lodash');
+var _ = require('lodash');
 var util = require('util');
 var p = plivo.RestAPI( {
     "authId": process.env.PLIVO_AUTH_ID,
     "authToken": process.env.PLIVO_AUTH_TOKEN
 } );
 var UserHandler = require('../handlers/users');
+var PlivoHandler = require('../helpers/plivo');
+var NexmoHandler = require('../helpers/nexmo');
+var Nexmo = new NexmoHandler;
+var Plivo = new PlivoHandler;
+
 
 
 var Number = function (db) {
     var User = db.model('user');
 
+    var isPhoneNumber  = /^\+?[0-9]{12}$/i;
+
+    this.cleanPhoneNumber = function( phoneNumber ) {
+        var cleanNumber;
+        if ( ! phoneNumber || ( typeof phoneNumber !== 'string' )) {
+            return;
+        }
+        cleanNumber = phoneNumber.replace(/[\s-\+]/g, '');
+        if ( isPhoneNumber.test( cleanNumber ) ) {
+            return cleanNumber;
+        }
+
+        return;
+    };
+
     this.serchNumbers = function ( req, res, next ) {
-        var countryIso = req.params.countryIso;
-        countryIso = countryIso || 'US';
-        countryIso = countryIso.toUpperCase();
         var params = {
-            //type: 'mobile',
-            services: 'sms',
-            country_iso: countryIso
+            countryIso: ( req.params.countryIso || 'US' ).toUpperCase(),
+            page: req.query.p,
+            limit: req.query.l
         };
-        p.search_phone_numbers( params, function ( status, response ) {
-            console.log( 'Status: ', status );
-            console.log( 'API Response:\n', response );
-            res.status( status ).send( response );
-        } );
+        var provider = 'PLIVO';
+        var resultObj;
+
+        switch ( provider ) {
+            case 'PLIVO': {
+                Plivo.searchNumber( params, function( err, result ) {
+                    if ( err ) {
+                        return next( err );
+                    }
+                    resultObj = _.map( result.objects, function( item ) {
+                        return {
+                            number: item.number,
+                            country: item.country,
+                            provider: 'PLIVO'
+                        }
+                    });
+
+                    return res.status( 200).send( { objects: resultObj } );
+                });
+            } break;
+            case 'NEXMO': {
+                Nexmo.searchNumber( params, function( err, result ){
+                    if ( err ) {
+                        return next( err );
+                    }
+
+                    return res.status( 200).send( result );
+                })
+            } break;
+            default: {} break;
+        }
     };
 
 

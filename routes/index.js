@@ -81,7 +81,7 @@ module.exports = function(app, db) {
                 logWriter.log( '', err.message + '\n' + err.stack );
             }
 
-            res.status( satus ).send( { error: _.omit(err, 'name', 'status')/*, stack: err.stack*/ } );
+            res.status( satus ).send( { error: _.omit(err, 'name', 'status'), stack: err.stack } );
         }
 
         if(satus === 401){
