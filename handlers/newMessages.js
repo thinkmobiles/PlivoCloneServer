@@ -391,7 +391,7 @@ module.exports = function( app, db ) {
         console.log(provider);
 
         if ( ! providerRegExp.test(provider) ) {
-            err = new Error('Bad Provider');
+            err = badRequests.InvalidValue( { value: provider, param: 'provider' } );
             err.status = 400;
             return callback( err );
         }
@@ -407,7 +407,7 @@ module.exports = function( app, db ) {
             } break;
 
             default : {
-                err = new Error('Unsupported service provider');
+                err = badRequests.InvalidValue( { value: provider, param: 'provider' } );
                 err.status = 400;
                 return callback()
             } break;
@@ -419,7 +419,8 @@ module.exports = function( app, db ) {
             text: msg
         };
 
-        sendFunc( sendParams, callback );
+        /*sendFunc( sendParams, callback );*/ //TODO uncoment for external
+        callback( null );
     };
 
     this.sendTEXTMessage = function( params, callback ) {
@@ -519,7 +520,7 @@ module.exports = function( app, db ) {
                     })
                 },
 
-                /* get ansver */
+                /* get answer */
                 function ( options, cb ) {
                     var response = {
                         success: "Message Sent",
@@ -559,7 +560,7 @@ module.exports = function( app, db ) {
             res.status( 200 ).send( result );
         })
 
-    }
+    };
 
     this.getPlivoInboundSMS = function( req, res, next ) {
         var body = req.body;
@@ -598,6 +599,7 @@ module.exports = function( app, db ) {
                         }
 
                         if (! dstUser ) {
+                            err = badRequests.InvalidValue( { param: 'dst', value: dst } );
                             err = new Error('no user with ' + to + ' number');
                             err.status = 400;
                             return cb( err );
