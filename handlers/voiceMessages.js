@@ -1229,7 +1229,7 @@ var VoiceMessagesModule = function (db) {
             // try to find plivo numbers in the given country:
             countPlivo: function (cb) {
                 var params = {
-                    country: countryIso,
+                    countryIso: countryIso,
                     type: NUMBER_TYPES.LOCAL,
                     feature: feature
                 };
@@ -1314,7 +1314,8 @@ var VoiceMessagesModule = function (db) {
                     count: results.countPlivo,
                     price: results.pricePlivo,
                     countryIso: countryIso,
-                    feature: feature
+                    feature: feature,
+                    type: NUMBER_TYPES.LOCAL
                 });
 
                 providers.push({
@@ -1322,7 +1323,8 @@ var VoiceMessagesModule = function (db) {
                     count: results.countNexmo,
                     price: results.priceNexmo,
                     countryIso: countryIso,
-                    feature: feature
+                    feature: feature,
+                    type: NUMBER_TYPES.ANY
                 });
 
                 if (callback && (typeof callback === 'function')) {

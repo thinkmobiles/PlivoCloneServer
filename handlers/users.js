@@ -7,6 +7,7 @@ var User = function ( db ) {
     var fs = require('fs');
     var path = require('path');
     var FileStorage = require('../modules/fileStorage');
+    var badRequests = require('../helpers/badRequests');
     var User = db.model( 'user' );
     var AddressBook = db.model('addressbook');
     var Price = db.model('countries');
@@ -53,10 +54,10 @@ var User = function ( db ) {
 
         //if (!password || !email || !mobile) {
         if (!password || !email) {
-            err = new Error('Not all parameters is set');
+            /*err = new Error('Not all parameters is set');
             err.status = 400;
-            return next(err);
-
+            return next(err);*/
+            return next(badRequests.NotEnParams({message: 'Not all parameters is set'}));
         }
 
         shaSum.update( password );
@@ -66,7 +67,7 @@ var User = function ( db ) {
             if( err ) {
                 next( err );
             } else if( user && user._id ) {
-                res.status( 409 ).send( {success: "user exist with email " + email } );
+                next(badRequests.DuplicateEntry({message: "user exist with email " + email}));
             } else {
                 user = new User( userBody );
                 user.save( function ( err, user ) {
@@ -98,16 +99,17 @@ var User = function ( db ) {
                     if( curUser && curUser._id ) {
                         session.register( req, res, curUser );
                     } else {
-                        res.status( 403 ).send( { success: "Wrong login or password" } );
+                        //res.status( 403 ).send( { success: "Wrong login or password" } );
+                        next(badRequests.SignInError({message: 'Wrong login or password', status: 403}));
                     }
                 } else {
                     next( err );
                 }
             } )
         } else {
-            errorObject = new Error( "Wrong input data" );
-            errorObject.status = 400;
-            next( errorObject )
+            //errorObject = new Error( "Wrong input data" );
+            //errorObject.status = 400;
+            next( badRequests.NotEnParams({message: 'Wrong input data'}) )
         }
     };
 
@@ -141,7 +143,7 @@ var User = function ( db ) {
 
                 Price.findOne(findObject, function(err, result){
                     if (err){
-                        return callback(err);
+                        return next(err);
                     }
                     if (result && result.extendNumberPackages){
                         numberPrice = lodash.findWhere(result.extendNumberPackages, {packageName: packageName})['price'];
@@ -156,9 +158,10 @@ var User = function ( db ) {
                         dateExpire.setSeconds(59);
 
                         if (userCredits < numberPrice){
-                            var err = new Error('Have no credits');
+                            /*var err = new Error('Have no credits');
                             err.status = 400;
-                            return next(err);
+                            return next(err);*/
+                            return next(badRequests.NotEnCredits());
                         }
 
                         //resultUser.credits -= numberPrice;
@@ -182,9 +185,10 @@ var User = function ( db ) {
                         });
 
                     } else {
-                        err = new Error('Not valid parameters');
-                        err.status = 400;
-                        next(err);
+                        //err = new Error('Not valid parameters');
+                        //err.status = 400;
+                        //next(err);
+                        next(badRequests.InvalidValue({message: 'Not valid parameters'}));
                     }
 
                 });
@@ -231,9 +235,10 @@ var User = function ( db ) {
                     dateExpire.setSeconds(59);
 
                     if (userCredits < numberPrice){
-                        var err = new Error('Have no credits');
-                        err.status = 400;
-                        return callback(err);
+                        //var err = new Error('Have no credits');
+                        //err.status = 400;
+                        //return callback(err);
+                        return callback(badRequests.NotEnCredits());
                     }
 
                     resultUser.credits -= numberPrice;
@@ -335,27 +340,27 @@ var User = function ( db ) {
         var err;
 
         if ( !oldPass || !newPass || !confirmPass ) {
-            err = new Error('Require field');
-            err.status = 409;
-
-            return res.status( err.status ).send( { success: err.message } );
+            //err = new Error('Require field');
+            //err.status = 409;
+            //return res.status( err.status ).send( { success: err.message } );
+            return next(badRequests.NotEnParams());
         }
 
         if ( newPass !== confirmPass ) {
-            err = new Error('New passwords dont match');
-            err.status = 409;
-
-            return res.status( err.status ).send( { success: err.message } );
+            //err = new Error('New passwords dont match');
+            //err.status = 409;
+            //return res.status( err.status ).send( { success: err.message } );
+            return next(badRequests.InvalidValue({message: 'New passwords don\'t match'}));
         }
 
         shaSumOld.update( oldPass );
         shaSumNew.update( newPass );
 
         if ( shaSumOld.digest( 'hex' ) === shaSumNew.digest( 'hex' ) ) {
-            err = new Error('New password is the same as the old');
-            err.status = 409;
-
-            return res.status( err.status ).send( { success: err.message } );
+            //err = new Error('New password is the same as the old');
+            //err.status = 400;
+            //return res.status( err.status ).send( { success: err.message } );
+            return next(badRequests.InvalidValue({message: 'New password is the same as the old'}));
         }
 
         findObject = {
@@ -374,11 +379,11 @@ var User = function ( db ) {
             }
 
             if ( !curUser ) {
-                err = new Error('Bad Password');
-                err.status = 401;
+                //err = new Error('Bad Password');
+                //err.status = 401;
                 //return next( err )
-
-                return res.status( err.status ).send( { success: err.message } );
+                //return res.status( err.status ).send( { success: err.message } );
+                return next(badRequests.InvalidValue({message: 'Bad Password', status: 401}));
             }
 
             res.status( 200 ).send( {success: "password updated succefuly"} )
@@ -470,7 +475,8 @@ var User = function ( db ) {
                 return res.status( 200 ).send( {success: 'contact ' + companion + ' deleted'} );
             }
 
-            res.status( 404).send( {success: 'contact ' + companion + ' not found'} )
+            //res.status( 404).send( {success: 'contact ' + companion + ' not found'} )
+            next(badRequests.NotFound({message: 'contact ' + companion + ' not found'}));
         })
     };
 
@@ -493,7 +499,8 @@ var User = function ( db ) {
                 return next( err );
             }
             if ( entry ) {
-                return res.status( 409 ).send( {success: "addressBook entry " + companion + 'exist'} );
+                //return res.status( 409 ).send( {success: "addressBook entry " + companion + 'exist'} );
+                return next(badRequests.DuplicateEntry({message: 'addressBook entry ' + companion + 'exist'}));
             }
 
             body.refUser = newObjectId( userId );
@@ -508,7 +515,8 @@ var User = function ( db ) {
                 existNumbers = lodash.intersection( allNumbers, numArr );
 
                 if ( existNumbers.length ) {
-                    return res.status( 409 ).send( {success: existNumbers} )
+                    //return res.status( 409 ).send( {success: existNumbers} )
+                    return next(badRequests.DuplicateEntry({message: existNumbers}));
                 }
 
                 //todo chack if undefined body.numbers generate []
@@ -547,7 +555,8 @@ var User = function ( db ) {
             }
 
             if ( ! entry ) {
-                return res.status( 403 ).send( {success: companion + ' Nnot found'} );
+                //return res.status( 403 ).send( {success: companion + ' Nnot found'} );
+                return next(badRequests.NotFound({message: companion + ' was not found'}));
             }
 
             function numberIsOccupied ( callback ) {
@@ -560,9 +569,10 @@ var User = function ( db ) {
                     existNumbers = lodash.intersection( allNumbers, numArr );
 
                     if ( existNumbers.length ) {
-                        err = new Error('number exist');
+                       /* err = new Error('number exist');
                         err.status = 409;
-                        return callback( err )
+                        return callback( err )*/
+                        return callback(badRequests.DuplicateEntry({message: 'number exist'}));
                     }
 
                     callback( null  );
@@ -581,7 +591,8 @@ var User = function ( db ) {
                     if ( fs.existsSync( storagePath ) ) {
 
                         err = new Error('storage not found');
-                        err.status = 404;
+                        //err.status = 404;
+                        err.status = 400;
 
                         return callback( err );
                     }
@@ -647,7 +658,8 @@ var User = function ( db ) {
             async.waterfall( tasks, function( err,result ) {
 
                 if ( err ) {
-                    return res.status(404).send(err.message);
+                    //return res.status(400).send(err.message);
+                    return next(err);
                 }
                 res.status( 200 ).send({success: companion +  " updated successfully"});
 
@@ -705,7 +717,8 @@ var User = function ( db ) {
             }
             existNumbers = lodash.intersection( allNumbers, numArr );
             if ( existNumbers.length ) {
-                return res.status( 409 ).send( {success: existNumbers} )
+                //return res.status( 409 ).send( {success: existNumbers} )
+                return next(badRequests.DuplicateEntry({message: existNumbers}));
             }
 
             AddressBook.update(
@@ -846,10 +859,11 @@ var User = function ( db ) {
                 var existNumbers = lodash.intersection( usedNumbers, newNumbers );
 
                 if ( existNumbers.length ) {
-                    err = new Error('{"success": "number(s) exist"}');
-                    err.status = 409;
+                   //err = new Error('{"success": "number(s) exist"}');
+                    //err.status = 409;
                     contactBody.numbers = existNumbers;
-                    return callback( err )
+                    //return callback( err )
+                    return callback(badRequests.DuplicateEntry({message: 'number(s) exist'}));
                 }
                 callback( null, model )
             })
@@ -934,7 +948,8 @@ var User = function ( db ) {
                     if ( err.status === 409 ) {
                         err.message = contactBody.numbers
                     }
-                    return res.status( err.status || 500 ).send(err.message); //todo change status and error
+                    //return res.status( err.status || 500 ).send(err.message); //todo change status and error
+                    return next(err);
                 }
                 if ( contactBody.avatar ) {
                     msg = {
@@ -955,7 +970,8 @@ var User = function ( db ) {
 
         res.sendFile( fileName, options, function(err) {
             if (err) {
-                return res.status( 500 ).end();
+                //return res.status( 500 ).end();
+                return next(err);
             }
         })
     };

@@ -127,7 +127,7 @@ var Push = function (db) {
         });
     };
 
-    this.remooveInactiveModels = function (ids, callback) {
+    this.removeInactiveModels = function (ids, callback) {
         var criteria = {
             _id: {
                 $in: ids
@@ -231,7 +231,7 @@ var Push = function (db) {
 
                     inactiveIds = result.inactiveIds;
 
-                    self.remooveInactiveModels(inactiveIds, function (err) {
+                    self.removeInactiveModels(inactiveIds, function (err) {
                         if (err) {
                             if (process.env.NODE_ENV !== 'production') {
                                 console.error('>>> Try to remove inactive push: ', err);
