@@ -146,6 +146,10 @@ var BadRequestModule = function () {
             errOptions.message = errMessage;
         }
 
+        if (!errOptions.status) {
+            errOptions.status = 400;
+        }
+
         return new Errors(errOptions);
     };
 
@@ -236,7 +240,7 @@ var BadRequestModule = function () {
             errOptions.message = DUPLICATE_ENTRY;
         }
         if (!errOptions.status) {
-            errOptions.status = 400;
+            errOptions.status = 409;
         }
 
         return new Errors(errOptions);

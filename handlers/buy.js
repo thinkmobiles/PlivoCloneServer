@@ -251,7 +251,8 @@ var Buy = function (db) {
                     var os = 'WINDOWS';
 
                     if (err) {
-                        return res.status(500).send(err.message);
+                        //return res.status(500).send(err.message);
+                        return next(err);
                     }
                     appId = response[0].appId;
                     productId = response[0].productId;
@@ -265,7 +266,7 @@ var Buy = function (db) {
                             if (err) {
                                 return next( err );
                             }
-                            res.status('200').send({ credits: updatedUser.credits })
+                            res.status(200).send({ credits: updatedUser.credits })
                         })
 
                     } )
@@ -278,7 +279,7 @@ var Buy = function (db) {
                     if (err) {
                         return next( err );
                     }
-                    res.status('200').send({ credits: updatedUser.credits })
+                    res.status(200).send({ credits: updatedUser.credits })
                 })
             }
                 break;
@@ -289,7 +290,8 @@ var Buy = function (db) {
                     var os = 'APPLE';
 
                     if (err) {
-                        return res.status(500).send(err.message);
+                        //return res.status(500).send(err.message);
+                        return next(err);
                     }
                     appId = response[0].appId;
                     productId = response[0].productId;
@@ -303,7 +305,7 @@ var Buy = function (db) {
                             if (err) {
                                 return next( err );
                             }
-                            res.status('200').send({ credits: updatedUser.credits })
+                            res.status(200).send({ credits: updatedUser.credits })
                         })
 
                     } )
@@ -312,7 +314,7 @@ var Buy = function (db) {
                 break;
             default: {
                 err = new Error('platform not supported');
-                err.status = 404;
+                err.status = 400;
                 return next( err );
             }
                 break;
@@ -324,7 +326,8 @@ var Buy = function (db) {
             var os = 'WINDOWS';
 
             if (err) {
-                return res.status(500).send(err.message);
+                //return res.status(500).send(err.message);
+                return next(err);
             }
             appId = response[0].appId;
             productId = response[0].productId;
@@ -338,7 +341,7 @@ var Buy = function (db) {
                     if (err) {
                         return next( err );
                     }
-                    res.status('200').send({ credits: updatedUser.credits })
+                    res.status(200).send({ credits: updatedUser.credits })
                 })
 
             } )
@@ -419,7 +422,8 @@ var Buy = function (db) {
         var country = new Country(insObj1);
         country.save(function(err){
             if (err) {
-                return res.status(500).send(err.message);
+                //return res.status(500).send(err.message);
+                return next(err);
             }
             res.status(200).send(country);
         })

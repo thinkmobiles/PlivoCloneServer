@@ -53,6 +53,10 @@ module.exports = function() {
         var page = params.page || 1;
         var limit = params.limit || 20;
 
+        if (country) {
+            country = country.toUpperCase();
+        }
+
         options = {
             country_iso: country,
             services: services,

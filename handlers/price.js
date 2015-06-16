@@ -1,6 +1,7 @@
 /**
  * Created by User on 09.04.2015.
  */
+var badRequests = require('../helpers/badRequests');
 var Price = function (db) {
     // var mongoose = require('mongoose');
     var Countries = db.model('countries');
@@ -33,7 +34,8 @@ var Price = function (db) {
                     next(err);
                 }
                 if (entry){
-                    res.status(409).send({success: countryName + ' already exist'})
+                    //res.status(409).send({success: countryName + ' already exist'})
+                    next(badRequests.DuplicateEntry({message: countryName + ' already exist'}));
                 } else {
                     country = new Countries(insertObj);
                     country

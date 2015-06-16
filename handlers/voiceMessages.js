@@ -759,26 +759,13 @@ var VoiceMessagesModule = function (db) {
     };
 
     this.sendMessage = function (req, res, next) {
-        var err;
         var userId = req.session.uId;
         var params = req.body;
         var dst = params.dst;
         var src = params.src;
 
-        if (!req.files || !req.files.voiceMsgFile) {
-            err = new Error();
-            err.message = NOT_ENAUGH_PARAMS + '"voiceMsgFile" was undefined';
-            err.status = 400;
-
-            return next(err);
-        }
-
-        if (!src || !dst) {
-            err = new Error();
-            err.message = NOT_ENAUGH_PARAMS + '"src" and "dst" are required params';
-            err.status = 400;
-
-            return next(err);
+        if (!req.files || !req.files.voiceMsgFile || !src || !dst) {
+            return next(badRequests.NotEnParams({reqParams: ['src', 'dst', 'voiceMsgFile']}));
         }
 
         if (src[0] !== '+') {
@@ -878,7 +865,14 @@ var VoiceMessagesModule = function (db) {
 
         res.sendFile(fileName, options, function (err) {
             if (err) {
-                return next(err);
+                if (process.env.NODE_ENV === 'development') {
+                    console.log(
+                        'SendFile Error: ', err.message, '\n',
+                        'Stack: ', err.stack
+                    );
+                }
+
+                res.status( err.status).end();
             }
         })
     };
@@ -912,15 +906,11 @@ var VoiceMessagesModule = function (db) {
         var dst = params.dst;
         var plivoFileUrl = params.recordUrl;
         var io = params.io;
-        var err;
         var dstUser;
         var socketConnectionObject;
 
         if (!src || !dst || !plivoFileUrl || !io) {
-            err = new Error();
-            err.message = NOT_ENAUGH_PARAMS + '. Required params: "src", "dst", "recordUrl", "io";';
-            err.status = 400;
-            return callback(err);
+            return callback(badRequests.NotEnParams({reqParams: ['src', 'dst', 'recordUrl', 'io']}));
         }
 
         if (src[0] !== '+') {
@@ -1070,8 +1060,8 @@ var VoiceMessagesModule = function (db) {
 
         voiceMessageParams = {
             src: src,
-            dst: src,
-            recordUrl: options.RecordUrl,
+            dst: dst,
+            recordUrl: recordUrl,
             io: req.app.get('io')
         };
 
@@ -1229,7 +1219,7 @@ var VoiceMessagesModule = function (db) {
             // try to find plivo numbers in the given country:
             countPlivo: function (cb) {
                 var params = {
-                    country: countryIso,
+                    countryIso: countryIso,
                     type: NUMBER_TYPES.LOCAL,
                     feature: feature
                 };
@@ -1314,7 +1304,8 @@ var VoiceMessagesModule = function (db) {
                     count: results.countPlivo,
                     price: results.pricePlivo,
                     countryIso: countryIso,
-                    feature: feature
+                    feature: feature,
+                    type: NUMBER_TYPES.LOCAL
                 });
 
                 providers.push({
@@ -1322,7 +1313,8 @@ var VoiceMessagesModule = function (db) {
                     count: results.countNexmo,
                     price: results.priceNexmo,
                     countryIso: countryIso,
-                    feature: feature
+                    feature: feature,
+                    type: NUMBER_TYPES.ANY
                 });
 
                 if (callback && (typeof callback === 'function')) {
