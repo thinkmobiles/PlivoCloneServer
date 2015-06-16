@@ -759,26 +759,13 @@ var VoiceMessagesModule = function (db) {
     };
 
     this.sendMessage = function (req, res, next) {
-        var err;
         var userId = req.session.uId;
         var params = req.body;
         var dst = params.dst;
         var src = params.src;
 
-        if (!req.files || !req.files.voiceMsgFile) {
-            err = new Error();
-            err.message = NOT_ENAUGH_PARAMS + '"voiceMsgFile" was undefined';
-            err.status = 400;
-
-            return next(err);
-        }
-
-        if (!src || !dst) {
-            err = new Error();
-            err.message = NOT_ENAUGH_PARAMS + '"src" and "dst" are required params';
-            err.status = 400;
-
-            return next(err);
+        if (!req.files || !req.files.voiceMsgFile || !src || !dst) {
+            return next(badRequests.NotEnParams({reqParams: ['src', 'dst', 'voiceMsgFile']}));
         }
 
         if (src[0] !== '+') {
@@ -912,15 +899,11 @@ var VoiceMessagesModule = function (db) {
         var dst = params.dst;
         var plivoFileUrl = params.recordUrl;
         var io = params.io;
-        var err;
         var dstUser;
         var socketConnectionObject;
 
         if (!src || !dst || !plivoFileUrl || !io) {
-            err = new Error();
-            err.message = NOT_ENAUGH_PARAMS + '. Required params: "src", "dst", "recordUrl", "io";';
-            err.status = 400;
-            return callback(err);
+            return callback(badRequests.NotEnParams({reqParams: ['src', 'dst', 'recordUrl', 'io']}));
         }
 
         if (src[0] !== '+') {
@@ -1070,8 +1053,8 @@ var VoiceMessagesModule = function (db) {
 
         voiceMessageParams = {
             src: src,
-            dst: src,
-            recordUrl: options.RecordUrl,
+            dst: dst,
+            recordUrl: recordUrl,
             io: req.app.get('io')
         };
 
