@@ -5,6 +5,8 @@
 var path = require('path');
 
 process.env.HOST = 'http://134.249.164.53:8830';
+process.env.HOST = 'http://134.249.164.53:8829';
+process.env.PORT = '8829';
 //process.env.HOST = 'http://localhost:8830';
 process.env.PLIVO_APP_ID = 14672593026521222;
 //process.env.DB_HOST = 'localhost';
