@@ -70,7 +70,7 @@ module.exports = function(app, db) {
 
     function errorHandler( err, req, res, next ) {
         var satus = err.status || 500;
-        var error = _.omit(err, 'name', 'status');
+        var error = /*_.omit(err, 'name', 'status');*/ {};
         error.message = err.message;
 
         if( process.env.NODE_ENV === 'production' ) {
