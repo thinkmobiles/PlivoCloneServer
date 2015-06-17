@@ -217,8 +217,13 @@ var Number = function (db) {
 
             },
             function(err, resultUser){
-                if (err){
-                return next(err);
+                if (err && (err.code === 11000) ){
+                    err = new Error('Number '+ number +' is in use. Please select another');
+                    return next(err);
+                }
+
+                if (err ){
+                    return next(err);
                 }
                 var left = lodash.findWhere(resultUser.numbers, {number: number})['left'];
                 res.status(200).send(
