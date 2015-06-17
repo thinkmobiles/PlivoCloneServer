@@ -3,6 +3,7 @@
  */
 var UserHandler = require('../handlers/users');
 var mongoose = require('mongoose');
+var async = require('async');
 var ObjectId = mongoose.Types.ObjectId;
 var iap = require('../helpers/in-app-purchase');
 var xml = require('xml2js');
@@ -154,20 +155,6 @@ var Buy = function (db) {
         } )
     }
 
-    function validateReceipt( receipt, os, callback ){
-        checkReceipt(receipt, os, function(err, receiptObj){
-            if (err) {
-                return callback( err );
-            }
-            isUsed(receiptObj.receiptId, function( err ){
-                if( err ) {
-                    return callback( err );
-                }
-                callback( null, receiptObj )
-            })
-        })
-    }
-
     function addCredits( userId, credits, callback ) {
         var updateCondition = {
             $inc: {
@@ -238,6 +225,7 @@ var Buy = function (db) {
             receiptId: params.receiptId,
             productId: params.productId,
             appId: params.appId,
+            os: params.os,
             rawReceipt: params.rawReceipt,
             refUser: params.refUser
         };
@@ -307,7 +295,7 @@ var Buy = function (db) {
             async.waterfall(
                 [
                     function( cb ) {
-                        validateReceipt( receipt, os, function( err, validatedReceipt ) {
+                        checkReceipt( receipt, os, function( err, validatedReceipt ) {
                             var saveOptions;
 
                             if ( err ) {
@@ -319,13 +307,26 @@ var Buy = function (db) {
                                 productId: validatedReceipt[0].productId,
                                 receiptId: validatedReceipt[0].receiptId,
                                 os: os,
-                                isisValidated: true,
-                                refUser: ObjectId( userId )
-
+                                isValidated: true,
+                                refUser: ObjectId( userId ),
+                                rawReceipt: receipt
                             };
 
+                            console.log('Receipt Options: ', saveOptions );
                             cb( null, saveOptions );
                         });
+                    },
+
+                    function( saveOptions, cb ) {
+                        var receiptId = saveOptions.receiptId;
+
+                        isUsed( receiptId, function( err, result ) {
+                            if ( err ) {
+                                return cb( err );
+                            }
+
+                            cb( null, saveOptions );
+                        })
                     },
 
                     /* get package credit amount*/
@@ -380,7 +381,7 @@ var Buy = function (db) {
 
                     res.status( 200).send(
                         {
-                            credits: user.credits
+                            credits: saveoptions.user.credits
                         }
                     )
                 }

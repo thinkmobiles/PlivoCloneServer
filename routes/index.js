@@ -70,18 +70,20 @@ module.exports = function(app, db) {
 
     function errorHandler( err, req, res, next ) {
         var satus = err.status || 500;
+        var error = _.omit(err, 'name', 'status');
+        error.message = err.message;
 
         if( process.env.NODE_ENV === 'production' ) {
             if(satus === 404 || satus === 401){
                 logWriter.log( '', err.message + '\n' + err.stack );
             }
-            res.status( satus).send({ error: _.omit(err, 'name', 'status') });
+            res.status( satus).send({ error: error });
         } else {
             if(satus !== 401) {
                 logWriter.log( '', err.message + '\n' + err.stack );
             }
 
-            res.status( satus ).send( { error: _.omit(err, 'name', 'status'), stack: err.stack } );
+            res.status( satus ).send( { error: error, stack: err.stack } );
         }
 
         if(satus === 401){

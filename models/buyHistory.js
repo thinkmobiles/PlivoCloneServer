@@ -8,10 +8,11 @@ module.exports = function (db){
     var schema = mongoose.Schema;
     var ObjectID = schema.Types.ObjectId;
     var receipt = new schema({
-        receiptId: String,
+        receiptId: { type: String, required: true },
         productId: String,
         appId: String,
         rawReceipt : String,
+        os: String,
         isValidated: {type: Boolean, default: false},
         errMsg: {
             type: String,
