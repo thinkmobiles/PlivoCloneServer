@@ -14,6 +14,7 @@ var p = plivo.RestAPI( {
 var UserHandler = require('../handlers/users');
 var PlivoHandler = require('../helpers/plivo');
 var NexmoHandler = require('../helpers/nexmo');
+var badRequests = require('../helpers/badRequests');
 var Nexmo = new NexmoHandler;
 var Plivo = new PlivoHandler;
 
@@ -21,21 +22,9 @@ var Plivo = new PlivoHandler;
 
 var Number = function (db) {
     var User = db.model('user');
+    var Country = db.model('countries');
 
-    var isPhoneNumber  = /^\+?[0-9]{12}$/i;
-
-    this.cleanPhoneNumber = function( phoneNumber ) {
-        var cleanNumber;
-        if ( ! phoneNumber || ( typeof phoneNumber !== 'string' )) {
-            return;
-        }
-        cleanNumber = phoneNumber.replace(/[\s-\+]/g, '');
-        if ( isPhoneNumber.test( cleanNumber ) ) {
-            return cleanNumber;
-        }
-
-        return;
-    };
+    var isPhoneNumber  = /^\+?[0-9]$/i;
 
     this.serchNumbers = function ( req, res, next ) {
         var params = {
@@ -76,56 +65,169 @@ var Number = function (db) {
         }
     };
 
+    this.newBuyNumber = function( params, mainCallback ) {
+        var countryIso = params.countryIso;
+        var packageName = params.packageName;
+        var userId = params.userId;
 
+        /* Get country prices & options*/
+        function getCountryOptions( countryIso, callback ) {
+            Country.findOne(
+                {
+                    countryIso: countryIso.toUpperCase()
+                },
+                function( err, countryOptions ) {
+                    if ( err ) {
+                        return callback( err );
+                    }
+
+                    if ( ! countryOptions ) {
+                        return callback( badRequests.NotFound({ message: 'Country: ' + countryIso + 'not supported' }) );
+                    }
+
+                    callback( null, countryOptions );
+                }
+            )
+        }
+
+        async.parallel(
+            {
+                numberOptions: function( cb ) {
+                    getCountryOptions( countryIso, function( err, countryOptions ) {
+                        if ( err ) {
+                            return cb( err );
+                        }
+
+                        var number;
+
+                        number = _.find( countryOptions.buyNumberPackages, { packageName: packageName });
+
+                        if (! number ) {
+                            return cb( badRequests.NotFound({ message: 'Package: ' + packageName + 'not found' }) );
+                        }
+
+                        cb( null, number );
+                    })
+                },
+
+                userModel: function( cb ) {
+                    User
+                        .findOne(
+                            { _id: ObjectId( userId ) },
+                            { numbers: true , credits: true }
+                        ).
+                        exec( function( err, user) {
+                            if ( err ) {
+                                return cb( err );
+                            }
+
+                            if (! user ) {
+
+                            }
+                        })
+                }
+            },
+            function( err, results ) {
+                if ( err ) {
+                    return mainCallback( err );
+                }
+
+
+            }
+        )
+
+
+    };
 
     this.buyNumber = function ( req, res, next ) {
         var params = req.body;
         var packageName = params.packageName;
         var countryIso = params.countryIso || 'US';
+        var provider = params.provider || 'PLIVO'; //TODO remove constant -> add validation
         var number = params.number;
         var users = new UserHandler(db);
-        var userId = (req.session) ? req.session.uId: null;
-        /*var appId = options.app_id || "";
-         var number = options.number;
-         var params = {
-         'app_id': appId,
-         'number': number
-         };*/
-        params.app_id = parseInt(process.env.PLIVO_APP_ID) || 14672593026521222;
-        // todo uncomment below lines for buying number through the PLIVO
-       /* p.buy_phone_number( params, function ( status, response ) {
+        var userId = req.session.uId;
+        var err;
+        var buyFunc;
+        var buyParams;
 
-            var userId = (req.session) ? req.session.uId: null;
-            var number;
+        if ( !packageName || !countryIso || ! provider || ! number ) {
+            err = badRequests.NotEnParams();
+            err.status = 400;
+            return next( err )
+        }
 
-            if(status === 201){
-                number = (response.numbers) ? response.numbers[0].number : null;
-                if(!userId || !number) {
-                    var err = new Error( 'Incorrect Parameters' );
-                    err.status = 400;
-                    next( err );
-                } else {
-                    number = '+' + number;
-                    users.addNumber( { userId: userId, number: number, countryIso: countryIso, packageName: packageName }, function(err, updatedUser){
-                        if(err){
-                            next(err);
-                        } else {
-                            var left = lodash.findWhere(resultUser.numbers, {number: number})['left'];
-                            res.status(200).send({number: number, credits: resultUser.credits, left: left});
+        number =  number.replace(/[^0-9]/g, '');
+
+        buyParams = {
+            number: number,
+            countryIso: countryIso
+        };
+
+        switch ( provider ) {
+            case 'PLIVO': {
+                buyFunc = Plivo.buyNumber;
+            } break;
+            case 'NEXMO': {
+                buyFunc = Nexmo.buyNumber;
+            } break;
+            default: {} break;
+        }
+
+        /*TODO uncoment for use plivo , delete what after*/
+        /*buyFunc( buyParams, function( err ) {
+            if ( err ) {
+                return next( err );
+            }
+
+            number = '+' + number;
+            return users.addNumber(
+                {
+                    userId: userId,
+                    number: number,
+                    countryIso: countryIso,
+                    packageName: packageName,
+                    provider: provider
+
+                },
+                function(err, resultUser){
+                    if (err){
+                        return next( err );
+                    }
+                    var left = lodash.findWhere(resultUser.numbers, {number: number})['left'];
+                    res.status(200).send(
+                        {
+                            number: number,
+                            credits: resultUser.credits,
+                            left: left
                         }
-                    });
-                }
-            } else {
-                res.status( status ).send( response );
-            }
-        } );*/
+                    );
+                });
+        });*/
+
+
         number = '+' + number;
-        users.addNumber({userId: userId, number: number, countryIso: countryIso, packageName: packageName}, function(err, resultUser){
-            if (err){
+        users.addNumber(
+            {
+                userId: userId,
+                number: number,
+                countryIso: countryIso,
+                packageName: packageName,
+                provider: provider
+
+            },
+            function(err, resultUser){
+                if (err){
                 return next(err);
-            }
-            var left = lodash.findWhere(resultUser.numbers, {number: number})['left'];
-            res.status(200).send({number: number, credits: resultUser.credits, left: left});
+                }
+                var left = lodash.findWhere(resultUser.numbers, {number: number})['left'];
+                res.status(200).send(
+                    {
+                        number: number,
+                        credits: resultUser.credits,
+                        left: left
+                    }
+                );
         });
     };
 

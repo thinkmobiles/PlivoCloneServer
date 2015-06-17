@@ -19,7 +19,8 @@ module.exports = function ( db ) {
         },
         provider: {
             type: String,
-            match: re
+            match: re,
+            uppercase: 1
         },
         countryIso: {
             type: String,
