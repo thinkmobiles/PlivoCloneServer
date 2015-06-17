@@ -90,15 +90,20 @@ module.exports.getPurchaseData = function (purchase) {
 			var item = purchase.receipt.in_app[i];
 			data.push({
 				productId: item.product_id,
+                appId: purchase.receipt.bundle_id,
+                receiptId: item.transaction_id,
 				purchaseDate: item.original_purchase_date_ms,
 				quantity: parseInt(item.quantity, 10)
 			});
 		}
+        console.log( purchase );
 		return data;
 	}
 	// old and will be deprecated by Apple
 	data.push({
 		productId: purchase.receipt.product_id,
+        /*appId: purchase.receipt.bundle_id,
+        receiptId: item.transaction_id,*/
 		purchaseDate: purchase.receipt.original_purchase_date_ms,
 		quantity: parseInt(purchase.receipt.quantity, 10)
 	});

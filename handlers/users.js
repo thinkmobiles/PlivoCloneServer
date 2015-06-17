@@ -247,6 +247,7 @@ var User = function ( db ) {
                     var number = {
                         number: options.number,
                         countryIso: options.countryIso,
+                        provider: options.provider,
                         expire: dateExpire
                     };
 
