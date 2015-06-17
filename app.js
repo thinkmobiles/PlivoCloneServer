@@ -132,19 +132,29 @@ mainDb.once( 'open', function callback() {
 
         socket.on('authorize', function (data) {
 
-            data.socketId = socket.id; //TODO remove if ROOM work
-            socket.join( data.uId );
+            /*clean previous user rooms*/
+            this.leaveAll();
+
+            /*join to room identified by userId */
+            this.join( data.uId );
 
             if ( process.env.NODE_ENV === 'development' ) {
                 console.log(
                     'Socket authorize:\n' +
-                    'id: ', socket.id,'\n' +
-                    'uId(ROOM): ', data.uId, '\n' +
-                    'clients: ', io.sockets.adapter.rooms[ data.uId ] );
+                    'SocketId: ', socket.id,'\n' +
+                    'userId (ROOM): ', data.uId, '\n' +
+                    'sockets open by user: ', io.sockets.adapter.rooms[ data.uId ] );
             }
 
+            data.socketId = socket.id; //TODO remove if ROOM work
             socketConnection.registerSocket(data);  //TODO remove if ROOM work
         });
+
+        /* leave all rooms on unAuthorize */
+        socket.on( 'unAuthorize', function() {
+            this.leaveAll();
+        });
+
         socket.on('disconnect', function () {
 
             /* TODO test rooms -> remove*/
@@ -155,8 +165,11 @@ mainDb.once( 'open', function callback() {
 
             /*TODO remove*/
             if ( process.env.NODE_ENV === 'development' ) {
-                console.log('Socket disconnected ' + socket.id);
+
+                console.log( 'Socket disconnected: ', socket.id );
+
             }
+
         });
     });
 } );
