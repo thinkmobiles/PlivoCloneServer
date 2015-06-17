@@ -40,6 +40,13 @@ module.exports = function( app, db ) {
     function sendSocketMsg ( userId, data, callback ) {
         var io = app.get('io');
 
+        if (process.env.NODE_ENV === 'development') {
+            console.log(
+                'Socket emit msg:\n',
+                'To: ', userId, '\n'
+            );
+        }
+
         io.sockets.to( userId ).emit('receiveMessage', data );
 
         callback();
