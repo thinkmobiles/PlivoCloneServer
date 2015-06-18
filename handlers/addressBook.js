@@ -496,11 +496,20 @@ var AddressBook = function(db) {
                 var usedNumbers = lodash.difference(allNumbers, oldNumbers);
                 var existNumbers = lodash.intersection(usedNumbers, newNumbers);
 
-                if (existNumbers.length) {
+                /*TODO test new and remove old*/
+                /*if (existNumbers.length) {
                     err = new Error( JSON.stringify( existNumbers ) );
                     err.status = 409;
                     return callback(err)
+                }*/
+
+                if (existNumbers.length) {
+                    err = new Error( 'Number(s) belong to another contact' );
+                    err.data = JSON.stringify( existNumbers );
+                    err.status = 409;
+                    return callback(err)
                 }
+
                 callback(null, model)
             })
         }
