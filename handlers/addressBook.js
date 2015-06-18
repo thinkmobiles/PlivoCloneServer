@@ -505,7 +505,7 @@ var AddressBook = function(db) {
 
                 if (existNumbers.length) {
                     err = new Error( 'Number(s) belong to another contact' );
-                    err.data = JSON.stringify( existNumbers );
+                    err.data = existNumbers ;
                     err.status = 409;
                     return callback(err)
                 }
