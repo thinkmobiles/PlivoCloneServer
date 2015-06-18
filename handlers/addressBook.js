@@ -354,7 +354,7 @@ var AddressBook = function(db) {
                     if (err) {
                         return next(err);
                     }
-                    res.status(200).send({success: "numbers addedd succefuly"})
+                    res.status(200).send( { success: "numbers addedd succefuly" } )
                 }
             );
         });
@@ -426,7 +426,7 @@ var AddressBook = function(db) {
             if (err) {
                 return next(err)
             }
-            res.status(200).send({succes: "succefuly blocked/unblocked"});
+            res.status(200).send( { success: "successful blocked/unblocked" } );
         })
     };
 
@@ -590,7 +590,7 @@ var AddressBook = function(db) {
             contactBody,
             function( err ) {
                 if ( err ) {
-                    return res.status( err.status || 500 ).send(err.message); //todo change status and error
+                    return next( err ); //todo change status and error
                 }
                 if ( contactBody.avatar ) {
                     msg = {
