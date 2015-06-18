@@ -7,9 +7,9 @@ var VoiceMessagesHandler = require('../handlers/voiceMessages');
 var multipart = require('connect-multiparty');
 var multipartMiddleware = multipart();
 
-module.exports = function(db) {
+module.exports = function( app, db) {
     var session = new SessionHandler(db);
-    var voiceMessagesHandler = new VoiceMessagesHandler(db);
+    var voiceMessagesHandler = new VoiceMessagesHandler(app, db);
 
     router.get('/form', session.authenticatedUser, voiceMessagesHandler.sendTestForm); //TODO: use only for tests, remove on production;
 

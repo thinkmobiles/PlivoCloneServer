@@ -31,13 +31,13 @@ var PlivoModule = require('../helpers/plivo');
 var NexmoModule = require('../helpers/nexmo');
 var badRequests = require('../helpers/badRequests');
 
-var VoiceMessagesModule = function (db) {
+var VoiceMessagesModule = function ( app, db ) {
     var fileStor = new FileStorage();
     var socketConnection = new SocketConnectionHandler(db);
     var userHandler = new UserHandler(db);
     var pushHandler = new PushHandler(db);
     var messagesHandler = new MessagesHandler(db);
-    var newMessagesHandler = new NewMessagesHandler({}, db); //TODO: ...
+    var newMessages = new NewMessagesHandler( app, db ); //TODO: ...
     var AddressBook = db.model('addressbook');
     var Conversation = db.model('converstion');
     var plivo = new PlivoModule();
@@ -541,7 +541,7 @@ var VoiceMessagesModule = function (db) {
 
             //send socket notification:
             function (conversationModel, cb) {
-                var socketIds = socketConnectionObject.socketId;
+                /*var socketIds = socketConnectionObject.socketId;
 
                 async.each(
                     socketIds,
@@ -564,7 +564,15 @@ var VoiceMessagesModule = function (db) {
                                 console.log('>>> socketio emit "reciveMessage" is success.');
                             }
                         }
-                    });
+                    });*/
+
+                newMessages.sendSocketMsg( dstUserId, conversationModel, function() {
+
+                    if (process.env.NODE_ENV !== 'production') {
+                        console.log('>>> socketio emit to ', dstUserId, ' "reciveMessage" is success.');
+                    }
+
+                });
 
                 cb(null, conversationModel);
             },
@@ -993,7 +1001,7 @@ var VoiceMessagesModule = function (db) {
             //send socket notification:
             function (conversationModel, cb) {
                 //var socketConnectionObject = dstUser.socketConnection;
-                var socketIds = socketConnectionObject.socketId;
+                /*var socketIds = socketConnectionObject.socketId;
 
                 async.each(
                     socketIds,
@@ -1016,7 +1024,15 @@ var VoiceMessagesModule = function (db) {
                                 console.log('>>> socketio emit "reciveMessage" is success.');
                             }
                         }
-                    });
+                    });*/
+
+                newMessages.sendSocketMsg( dstUser._id, conversationModel, function() {
+
+                    if (process.env.NODE_ENV !== 'production') {
+                        console.log('>>> socketio emit to ', dstUser._id, ' "reciveMessage" is success.');
+                    }
+
+                });
 
                 cb(null, conversationModel);
             },

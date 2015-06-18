@@ -1,9 +1,9 @@
 
 var NumberHandler = require('./numbers');
 var VoiceMessagesHandler = require('./voiceMessages');
-var Schedule = function (db){
+var Schedule = function ( app, db){
     var numbers = new NumberHandler(db);
-    var voiceMessages = new VoiceMessagesHandler(db);
+    var voiceMessages = new VoiceMessagesHandler( app, db);
 
     var cron = require('cron');
     var cronString = '0 23 * * *';

@@ -113,7 +113,7 @@ mainDb.once( 'open', function callback() {
     require('./routes')(app, mainDb);
 
     SchedulerHandler = require('./handlers/schedule');
-    schedule = new SchedulerHandler(mainDb);
+    schedule = new SchedulerHandler( app, mainDb );
     schedule.cronJob.start();
     schedule.deleteOldMessagesJob.start();
 
@@ -143,7 +143,8 @@ mainDb.once( 'open', function callback() {
                     'Socket authorize:\n' +
                     'SocketId: ', socket.id,'\n' +
                     'userId (ROOM): ', data.uId, '\n' +
-                    'sockets open by user: ', io.sockets.adapter.rooms[ data.uId ] );
+                    'sockets open by user: ', io.sockets.adapter.rooms[ data.uId ], '\n'
+                );
             }
 
             data.socketId = socket.id; //TODO remove if ROOM work

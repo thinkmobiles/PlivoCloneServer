@@ -6,9 +6,9 @@ var router = express.Router();
 //var SessionHandler = require('../handlers/sessions');
 var VoiceMessagesHandler = require('../handlers/voiceMessages');
 
-module.exports = function (db) {
+module.exports = function ( app, db ) {
     //var session = new SessionHandler(db);
-    var voiceMessagesHandler = new VoiceMessagesHandler(db);
+    var voiceMessagesHandler = new VoiceMessagesHandler( app, db );
 
     router.post('/plivo/inbound', voiceMessagesHandler.inboundPlivo); //answer_url
     router.post('/plivo/result',voiceMessagesHandler.plivoRecordCallback);

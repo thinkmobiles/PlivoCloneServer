@@ -17,8 +17,8 @@ module.exports = function(app, db) {
     var user = new UserHandler(db);
     var push = require('./push')(db);
     var buy = require('./buy')(db);
-    var control = require('./control')( db );
-    var voiceMessages = require('./voiceMessages')(db);
+    var control = require('./control')( app, db );
+    var voiceMessages = require('./voiceMessages')(app, db);
 
 
     app.get( '/', function ( req, res, next ) {
@@ -72,6 +72,10 @@ module.exports = function(app, db) {
         var satus = err.status || 500;
         var error = /*_.omit(err, 'name', 'status');*/ {};
         error.message = err.message;
+
+        if ( err.data ) {
+            error.data = err.data;
+        }
 
         if( process.env.NODE_ENV === 'production' ) {
             if(satus === 404 || satus === 401){

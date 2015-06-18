@@ -52,6 +52,8 @@ module.exports = function( app, db ) {
         callback();
     }
 
+    this.sendSocketMsg = sendSocketMsg;
+
 
     /* Public Functions*/
     this.calculateChatString = function (src, dst) {

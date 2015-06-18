@@ -213,13 +213,13 @@ var User = function ( db ) {
 
         User.findOne({_id: userId}, function(err, resultUser){
             if (err){
-                return callback(err);
+                return callback( err );
             }
             userCredits = resultUser.credits;
 
             Price.findOne(findObject, function(err, result){
                 if (err){
-                    return callback(err);
+                    return callback( err );
                 }
                 if (result && result.buyNumberPackages){
 
@@ -255,7 +255,7 @@ var User = function ( db ) {
 
                     resultUser.save(function(err, updatedUser){
                         if (err){
-                            return callback(err);
+                            return callback( err );
                         }
                         callback(null, updatedUser);
                     });
