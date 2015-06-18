@@ -656,6 +656,10 @@ var Message = function ( db, app ) {
                         {
                          $project: {
                              'body': 1,
+                             'chat': 1,
+                             'type': 1,
+                             'voiceURL': 1,
+                             'read': 1,
                              'companion': 1,
                              'postedDate': 1,
                              'owner': 1
@@ -755,6 +759,25 @@ var Message = function ( db, app ) {
                 res.status(201).send({success: 'massage is read'})
             })
     };
+
+    this.deleteOneMessage = function( req, res, next ) {
+        var messageId = req.params.id;
+        var userId = req.session.uId;
+
+        Conversation.findByIdAndUpdate(
+            messageId,
+            {
+                $pull: { show: userId }
+            },
+            function( err, result ) {
+                if ( err ) {
+                    return next( err );
+                }
+
+                res.status(200).send( { success: 'Message deleted' } )
+            }
+        )
+    }
 };
 
 module.exports = Message;
