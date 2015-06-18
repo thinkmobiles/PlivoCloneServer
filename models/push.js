@@ -9,7 +9,8 @@ module.exports = function (db){
     var ObjectID = schema.Types.ObjectId;
     var push = new schema({
         provider : String,
-        channelURI: {type: String, unique: true },
+        deviceId: String,
+        channelURI: { type: String },
         refUser: { type: ObjectID, ref: 'user', default: null },
         createdAt: {type: Date, default: Date.now},
         updatedAt: {type: Date, default: Date.now}

@@ -156,6 +156,7 @@ var Push = function (db) {
         var userId = req.session.uId;
         var params = req.body;
         var provider = params.provider;
+        var deviceId = params.deviceId;
         var channelURI = params.channelId;
         var criteria;
         var update;
@@ -168,12 +169,32 @@ var Push = function (db) {
             return next(badRequests.InvalidValue({message: 'Incorrect provider: ' + provider}));
         }
 
-        criteria = {
+        switch ( provider ) {
+            case 'WINDOWS': {
+                if ( !deviceId ) {
+                    return next(badRequests.NotEnParams({reqParams: ['deviceId']}));
+                }
+            } break;
+            case 'APPLE': {
+                deviceId = channelURI
+            } break;
+            case 'GOOGLE': {
+                deviceId = channelURI
+            } break;
+            default: {} break;
+        }
+
+        /*criteria = {
             channelURI: channelURI
+        };*/
+
+        criteria = {
+            deviceId: deviceId
         };
 
         update = {
             $set: {
+                channelURI: channelURI,
                 provider: provider,
                 refUser: ObjectId(userId),
                 updatedAt: new Date()
