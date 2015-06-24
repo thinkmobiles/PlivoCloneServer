@@ -197,7 +197,7 @@ module.exports = function () {
     };
 
     this.generatePlayXML = function (fileUrl) {
-        var xmlString = '<?xml version="1.0" encoding="UTF-8"?>' +
+        var xmlString = /*'<?xml version="1.0" encoding="UTF-8"?>' +*/
                         '<vxml version = "2.1" >' +
                             '<form>' +
                                 '<block>' +
