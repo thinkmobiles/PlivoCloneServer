@@ -12,8 +12,8 @@ var nexmo = new Nexmo({
      debug: process.env.NODE_ENV === 'development'
 });
 
-var outCallXmlRoute = process.env.HOST + '/control/nexmo/outbound/';
-var inCallXmlRoute = process.env.HOST + '/control/nexmo/inbound/';
+var outCallXmlRoute = process.env.HOST + '/control/nexmo/outbound';
+var inCallXmlRoute = process.env.HOST + '/control/nexmo/inbound';
 var NUMBER_TYPES = require('../constants/numberTypes');
 var NUMBER_FEATURES = require('../constants/numberFeatures');
 
