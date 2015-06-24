@@ -220,56 +220,6 @@ var Message = function ( db, app ) {
         });
     }
 
-    this.sendNewMessage = function( req, res, next ) {
-        var params = req.body;
-        var dst = params.dst;
-        var src = params.src;
-        var userId = req.session.uId;
-
-        function getUsers( callback ) {
-            async.parallel(
-                [
-                    async.apply( getUser, src ),
-                    async.apply( getUser, dst )
-                ],
-                callback
-            );
-        }
-
-        function sendInnerMsg( params ) {
-
-        }
-
-        function getDirection( users, callback ) {
-            var srcUser = users[0];
-            var dstUser = users[1];
-            var params = {
-                srcUser: srcUser,
-                dstUser: dstUser,
-                src: src,
-                dst: dst
-            };
-
-            async.waterfall([
-                getPrice,
-            ]);
-
-            if ( dstUser ) {
-                sendInnerMsg( params );
-            } else {
-                sendExternalMsg( params )
-            }
-        }
-
-        async.waterfall([
-            getUsers,
-            getPrice,
-            getDirection
-        ])
-    };
-
-
-
     this.subCredits = subCredits;
 
     this.getPrice = getPrice;
@@ -505,13 +455,6 @@ var Message = function ( db, app ) {
          console.log( 'API Response:\n', response );
          res.status( 200 ).send( response );
          } );*/
-    };
-
-    this.postMessage = function ( req, res, next ) {
-        var message = req.body;
-        console.dir( message );
-
-        res.status( 200 ).send();
     };
 
     this.getConversations = function ( req, res, next ) {

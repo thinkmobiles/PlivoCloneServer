@@ -13,12 +13,14 @@ var SchedulerHandler;
 var schedule;
 var mainDb;
 
+process.env.NODE_ENV = 'development';
+
 /*Get configuration parameters*/
 if ( process.env.NODE_ENV ) {
     require( './config/'+ process.env.NODE_ENV.toLowerCase() );
 } else {
-    process.env.NODE_ENV = 'development';
-    require( './config/development' );
+    process.env.NODE_ENV = 'production';
+    require( './config/production' );
 }
 
 process.env.UPLOAD_DIR = path.join(path.dirname(require.main.filename), 'uploads');
@@ -56,7 +58,9 @@ mainDb = mongoose.createConnection( process.env.DB_HOST, process.env.DB_NAME, pr
 
 mainDb.on( 'error', console.error.bind( console, 'connection error:' ) );
 mainDb.once( 'open', function callback() {
-    console.log( "Connection to " + process.env.DB_NAME + " is success" );
+    console.log(
+        "Connection to database ",  process.env.DB_NAME, " is success"
+    );
 
     var session = require( 'express-session' );
     var MemoryStore = require( 'connect-redis' )( session );
@@ -105,7 +109,10 @@ mainDb.once( 'open', function callback() {
     } );
 
     server.listen( port, function () {
-        console.log( 'Express start on port ' + port );
+        console.log(
+            'Express start on port ', port, '\n',
+            'Enviroment: ', process.env.NODE_ENV, '\n'
+        );
     } );
 
     app.set('io', io);

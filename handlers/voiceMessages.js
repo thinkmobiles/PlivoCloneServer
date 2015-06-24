@@ -1107,7 +1107,15 @@ var VoiceMessagesModule = function ( app, db ) {
     };
 
     this.answerNexmo = function (req, res, next) {
-        res.status(500).send({error: 'Not implemented yet'})
+        var fileUrl = req.query.file;
+        var xml = nexmo.generatePlayXML(fileUrl);
+
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('>>> ', req.originalUrl);
+            console.log(util.inspect(req.body, { showHidden: true, depth: 5 }));
+        }
+
+        res.status(200).send(xml);
     };
 
     this.testDeleteOldMessages = function (req, res, next) {

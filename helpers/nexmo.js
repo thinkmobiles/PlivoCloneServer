@@ -5,11 +5,11 @@
 var Nexmo = require('./simple-nexmo');
 var _ = require('lodash');
 var nexmo = new Nexmo({
-    apiKey: '06e01628',
-    apiSecret: '8d9c2526',
+    apiKey:  process.env.NEXMO_API_KEY,
+    apiSecret: process.env.NEXMO_API_SECRET,
      /*baseUrl: 'API_BASE_URL',
      useSSL: true,*/
-     debug: true //TODO: remove from production
+     debug: process.env.NODE_ENV === 'development'
 });
 
 var outCallXmlRoute = process.env.HOST + '/control/nexmo/outbound/';
@@ -171,7 +171,7 @@ module.exports = function () {
         nexmo.buyNumber( options, callback ); // TODO custom callback
     };
 
-    this.sendVoiceMsg = function ( params, callback ) {
+    this.createCall = function ( params, callback ) {
         var srcUserId = params.srcUser._id;
         var fileUrl = params.fileUrl;
         var src = params.src;
@@ -197,7 +197,16 @@ module.exports = function () {
     };
 
     this.generatePlayXML = function (fileUrl) {
-        var xmlString = '';
+        var xmlString = '<?xml version="1.0" encoding="UTF-8"?>' +
+                        '<vxml version = "2.1" >' +
+                            '<form>' +
+                                '<block>' +
+                                    '<audio src="' + fileUrl + '"/>' +
+                                '</block>' +
+                            '</form>' +
+                        '</vxml>';
+
+        return xmlString;
     };
 
     this.generateRecordXML = function (from, to) {
