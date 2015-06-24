@@ -19,8 +19,13 @@ process.env.DB_PORT = 27017;
 process.env.REDIS_HOST = '134.249.164.53';
 process.env.REDIS_PORT = 6379;
 
+/*Plivo credentials*/
 process.env.PLIVO_AUTH_ID = "MAYTRKODM5Y2ZINDVLOT";
 process.env.PLIVO_AUTH_TOKEN = "ZDNhZjZmYTZiZWU3NzJjNGZkOWYyMmY0YTA3ZGZk";
+
+/*Nexmo credentials*/
+process.env.NEXMO_API_KEY = "42d19e9b";
+process.env.NEXMO_API_SECRET = "36e5af51";
 
 //ffmpeg:
 //process.env.FFMPEG_DIR = path.join('C:', 'Program Files', 'ffmpeg', 'bin');
