@@ -1107,7 +1107,7 @@ var VoiceMessagesModule = function ( app, db ) {
     };
 
     this.answerNexmo = function (req, res, next) {
-        var fileUrl = req.params.file;
+        var fileUrl = req.body.file;
         var xml = nexmo.generatePlayXML(fileUrl);
 
         if (process.env.NODE_ENV !== 'production') {
