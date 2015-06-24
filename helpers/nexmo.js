@@ -205,7 +205,7 @@ module.exports = function () {
                                 '</block>' +
                             '</form>' +
                         '</vxml>';
-
+                        console.log(xmlString);
         return xmlString;
     };
 
