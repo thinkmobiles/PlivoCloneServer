@@ -356,8 +356,8 @@ var User = function ( db ) {
             return next(badRequests.InvalidValue({message: 'New passwords don\'t match'}));
         }
 
-        oldPassHash = shaSumOld.update( oldPass );
-        newPassHash = shaSumNew.update( newPass );
+        oldPassHash = shaSumOld.update( oldPass).digest('hex');
+        newPassHash = shaSumNew.update( newPass).digest('hex');
 
         /*if ( shaSumOld.digest( 'hex' ) === shaSumNew.digest( 'hex' ) ) {*/
         if ( oldPassHash === newPassHash ) {
