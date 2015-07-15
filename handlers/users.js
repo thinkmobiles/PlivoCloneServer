@@ -376,8 +376,6 @@ var User = function ( db ) {
             $set: { password: newPassHash }
         };
 
-        console.log( findObject, '\n', setObject);
-
         User.findOneAndUpdate( findObject, setObject, function ( err, curUser ) {
 
             if ( err ) {
