@@ -336,6 +336,8 @@ var User = function ( db ) {
         var confirmPass = body.confirmnewpass;
         var shaSumOld = crypto.createHash( 'sha256' );
         var shaSumNew = crypto.createHash( 'sha256' );
+        var oldPassHash;
+        var newPassHash;
         var findObject;
         var setObject;
         var err;
@@ -354,10 +356,11 @@ var User = function ( db ) {
             return next(badRequests.InvalidValue({message: 'New passwords don\'t match'}));
         }
 
-        shaSumOld.update( oldPass );
-        shaSumNew.update( newPass );
+        oldPassHash = shaSumOld.update( oldPass );
+        newPassHash = shaSumNew.update( newPass );
 
-        if ( shaSumOld.digest( 'hex' ) === shaSumNew.digest( 'hex' ) ) {
+        /*if ( shaSumOld.digest( 'hex' ) === shaSumNew.digest( 'hex' ) ) {*/
+        if ( oldPassHash === newPassHash ) {
             //err = new Error('New password is the same as the old');
             //err.status = 400;
             //return res.status( err.status ).send( { success: err.message } );
@@ -366,11 +369,11 @@ var User = function ( db ) {
 
         findObject = {
             "_id": userId,
-            "password": shaSumOld.digest( 'hex' )
+            "password": oldPassHash
         };
 
         setObject = {
-            $set: { password: shaSumNew.digest( 'hex' ) }
+            $set: { password: newPassHash }
         };
 
         User.findOneAndUpdate( findObject, setObject, function ( err, curUser ) {
