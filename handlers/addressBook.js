@@ -85,13 +85,15 @@ var AddressBook = function(db) {
         var userId = req.session.uId;
         var queryObj = {
             refUser: newObjectId(userId),
-            companion: companion
+            companion: {
+                $in: [].concat(companion)
+            }
         };
         var projObj = {
             select: {companion: true} //todo add for select only companion
         };
 
-        AddressBook.findOneAndRemove(queryObj, function (err, entry) {
+        AddressBook.remove( queryObj, function (err, entry) {
             if (err) {
                 return next(err);
             }
