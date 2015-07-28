@@ -1,6 +1,6 @@
 var CONVERSATION_TYPES = require('./../constants/conversationTypes');
 
-var plivo = require( 'plivo' );
+var plivo = require( 'plivo-node' );
 var p = plivo.RestAPI( {
     "authId": process.env.PLIVO_AUTH_ID,
     "authToken": process.env.PLIVO_AUTH_TOKEN
