@@ -1,12 +1,13 @@
 var CONVERSATION_TYPES = require('./../constants/conversationTypes');
 
-var plivo = require( 'plivo-node' );
+var plivo = require( 'plivo' );
 var p = plivo.RestAPI( {
     "authId": process.env.PLIVO_AUTH_ID,
     "authToken": process.env.PLIVO_AUTH_TOKEN
 } );
 var async = require( 'async' );
 var lodash = require( 'lodash' );
+var _ = require( 'lodash' );
 var util = require('util');
 var SocketConnectionHandler = require( '../handlers/socketConnections' );
 var badRequests = require('../helpers/badRequests');
@@ -704,10 +705,37 @@ var Message = function ( db, app ) {
     };
 
     this.deleteOneMessage = function( req, res, next ) {
-        var messageId = req.params.id;
+        var messageIds = req.query.message || [ req.params.id ];
         var userId = req.session.uId;
 
-        Conversation.findByIdAndUpdate(
+        messageIds = lodash.map( messageIds, function( value ) {
+            return newObjectId( value );
+        });
+
+        console.log( messageIds );
+        Conversation.update(
+            {
+                _id: { $in: messageIds }
+            },
+
+            {
+                $pull: { show: userId }
+            },
+
+            {
+                multi: true
+            },
+
+            function( err, result ) {
+                if ( err ) {
+                    return next( err );
+                }
+
+                res.status(200).send( { success: 'Message(s) deleted' } )
+            }
+        );
+
+        /*Conversation.findByIdAndUpdate(
             messageId,
             {
                 $pull: { show: userId }
@@ -719,7 +747,7 @@ var Message = function ( db, app ) {
 
                 res.status(200).send( { success: 'Message deleted' } )
             }
-        )
+        )*/
     }
 };
 
