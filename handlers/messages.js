@@ -640,15 +640,41 @@ var Message = function ( db, app ) {
         var number1 = req.params.n1;
         var number2 = req.params.n2;
         var userId = req.session.uId;
+        var chats = req.query.chat;
+        var chat = [];
 
-        var chat = (number1 < number2) ? (number1 + ':' + number2) : (number2 + ':' + number1);
+        if ( chats && chats instanceof Array ) {
+            chat = chats;
+        } else {
+            chat = (number1 < number2) ? [(number1 + ':' + number2)] : [(number2 + ':' + number1)];
+        }
 
-        Conversation.update({chat: chat}, {$pull: {show: userId}}, {multi: true}, function(err){
-            if (err){
-                return next(err);
+        Conversation.update(
+            {
+                chat: {
+                    $in: chat
+                }
+            },
+
+            {
+                $pull: {
+                    show: userId
+                }
+            },
+
+            {
+                multi: true
+            },
+
+            function( err, result ) {
+
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: "Chat deleted successfully"});
             }
-            res.status(200).send({success: "Chat deleted successfully"});
-        });
+        );
     };
 
     /* get unread msg count for chat*/

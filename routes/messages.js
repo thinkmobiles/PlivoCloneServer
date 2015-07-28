@@ -24,6 +24,7 @@ module.exports = function(db, app) {
     router.get( '/lastchats', session.authenticatedUser, messages.getLastByChats );
     router.get( '/recent', session.authenticatedUser, messages.getRecentCompanion );
     router.delete( '/', session.authenticatedUser, messages.deleteOneMessage );
+    router.delete( '/chats', session.authenticatedUser, messages.deleteChat );
     router.delete( '/:id', session.authenticatedUser, messages.deleteOneMessage );
     router.delete( '/:n1/:n2', session.authenticatedUser, messages.deleteChat);
     router.post('/plivo', newMessages.getPlivoInboundSMS );
