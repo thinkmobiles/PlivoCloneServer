@@ -12,6 +12,7 @@ module.exports = function (db){
     var addressbook = new AddressBookHandler(db);
     var session = new SessionHandler(db);
 
+    router.delete( '/', session.authenticatedUser, addressbook.deleteAddressBookEntry );
     router.delete( '/:companion', session.authenticatedUser, addressbook.deleteAddressBookEntry );
     //router.post( '/', session.authenticatedUser, addressbook.addAddresbookEntry );
     router.get( '/', session.authenticatedUser, addressbook.getAddressBook );
