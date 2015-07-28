@@ -81,23 +81,23 @@ var AddressBook = function(db) {
      };*/
 
     this.deleteAddressBookEntry = function (req, res, next) {
-        var companion = req.params.companion;
+        var companion = req.query.companion || [ req.params.companion ];
         var userId = req.session.uId;
         var queryObj = {
             refUser: newObjectId(userId),
             companion: {
-                $in: [].concat(companion)
+                $in: companion
             }
         };
         var projObj = {
             select: {companion: true} //todo add for select only companion
         };
 
-        AddressBook.remove( queryObj, function (err, entry) {
+        AddressBook.remove( queryObj, function (err) {
             if (err) {
                 return next(err);
             }
-            res.status(200).send({success: 'contact ' + companion + ' deleted'});
+            res.status(200).send({success: 'contact ' + companion.join() + ' deleted'});
         })
     };
 
