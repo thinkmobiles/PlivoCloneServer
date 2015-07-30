@@ -11,7 +11,7 @@ var path = require('path');
 
 iap.config({
     applePassword: "c8f948446a0b4f1e94107ac48d4ad6fa",
-    googlePublicKeyPath: path.join( __dirname, '..', 'config')
+    googlePublicKeyPath: path.join( __dirname, '..', 'config/')
 });
 
 var Buy = function (db) {
