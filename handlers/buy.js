@@ -7,10 +7,11 @@ var async = require('async');
 var ObjectId = mongoose.Types.ObjectId;
 var iap = require('../helpers/in-app-purchase');
 var xml = require('xml2js');
+var path = require('path');
 
 iap.config({
     applePassword: "c8f948446a0b4f1e94107ac48d4ad6fa",
-    googlePublicKeyPath: '../config/'
+    googlePublicKeyPath: path.join( __dirname, '..', 'config')
 });
 
 var Buy = function (db) {
