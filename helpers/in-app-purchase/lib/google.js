@@ -125,13 +125,15 @@ module.exports.validatePurchase = function (receipt, cb) {
 };
 
 module.exports.getPurchaseData = function (purchase) {
-	if (!purchase) {
+	if (!purchase || !purchase.data) {
 		return null;
 	}
 	var data = [];
 	data.push({
-		productId: purchase.productId,
-		purchaseDate: purchase.purchaseTime,
+		productId: purchase.data.productId,
+		receiptId: purchase.data.orderId,
+		appId: purchase.data.packageName,
+		purchaseDate: purchase.data.purchaseTime,
 		quantity: 1
 	});
 	return data;
