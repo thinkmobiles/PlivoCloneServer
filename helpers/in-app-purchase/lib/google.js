@@ -125,17 +125,18 @@ module.exports.validatePurchase = function (receipt, cb) {
 };
 
 module.exports.getPurchaseData = function (purchase) {
-	if (!purchase || !purchase.data) {
+	if (! purchase ) {
 		return null;
 	}
 	var data = [];
 	data.push({
-		productId: purchase.data.productId,
-		receiptId: purchase.data.orderId,
-		appId: purchase.data.packageName,
-		purchaseDate: purchase.data.purchaseTime,
+		productId: purchase.productId,
+		receiptId: purchase.orderId,
+		appId: purchase.packageName,
+		purchaseDate: purchase.purchaseTime,
 		quantity: 1
 	});
+	console.log(data);
 	return data;
 };
 
