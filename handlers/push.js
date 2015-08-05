@@ -179,7 +179,9 @@ var Push = function (db) {
                 deviceId = channelURI
             } break;
             case 'GOOGLE': {
-                deviceId = channelURI
+                if ( !deviceId ) {
+                    return next(badRequests.NotEnParams({reqParams: ['deviceId']}));
+                }
             } break;
             default: {} break;
         }
