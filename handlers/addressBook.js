@@ -631,7 +631,7 @@ var AddressBook = function(db) {
                     );
                 }
 
-                res.status( err.status).end();
+                res.status( 500 ).end();
             }
         })
     };
