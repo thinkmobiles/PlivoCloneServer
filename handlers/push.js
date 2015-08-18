@@ -17,7 +17,7 @@ var path = require('path');
 var _ = require('lodash');
 //var wns = new Wns;
 var gcm = require('../helpers/gcm')('AIzaSyCon4JAMBlXEonuzKYLCO5PbOW3PjH_biU');
-var apn = require('../helpers/apns')(path.join("config/PseudoAPNSDev.p12"));
+var apn = require('../helpers/apns')(path.join("config/PseudoAPNSDistr.p12"));
 var wns = new WNS(WNS_CLIENT_ID, WNS_CLIENT_SECRET);
 
 var PUSH_OPERATORS = require('../constants/pushOperators');
