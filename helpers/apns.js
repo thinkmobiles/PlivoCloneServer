@@ -4,7 +4,7 @@
 module.exports = (function () {
     "use strict";
     var apn = require("apn");
-    var isProduction = process.env.NODE_ENV === 'production';
+    var isProduction = /*process.env.NODE_ENV === 'production'*/ true;
 
     var apnsClass = function( certificateUrl ){
         var options = {
