@@ -10,7 +10,7 @@ var xml = require('xml2js');
 var path = require('path');
 
 iap.config({
-    applePassword: "c8f948446a0b4f1e94107ac48d4ad6fa",
+    applePassword: /*"c8f948446a0b4f1e94107ac48d4ad6fa"*/"b59e40a56926479eae46cc9e6cc1a9d1",
     googlePublicKeyPath: path.join( __dirname, '..', 'config/')
 });
 
