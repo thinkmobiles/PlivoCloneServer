@@ -17,7 +17,7 @@ var path = require('path');
 var _ = require('lodash');
 //var wns = new Wns;
 var gcm = require('../helpers/gcm')('AIzaSyCon4JAMBlXEonuzKYLCO5PbOW3PjH_biU');
-var apn = require('../helpers/apns')(path.join("config/PseudoAPNSDistr.p12"));
+var apn = require('../helpers/apns')(path.join("config/PseudoAPNSDev_2.p12"));
 var wns = new WNS(WNS_CLIENT_ID, WNS_CLIENT_SECRET);
 
 var PUSH_OPERATORS = require('../constants/pushOperators');
@@ -285,9 +285,9 @@ var Push = function (db) {
     this.sendTestPush = function (req, res, next) {
         var params = req.query;
         var pushParams = {
-            toUser: params.dst || "5538ad3663e4d9634200000c",
+            toUser: params.dst || "5549d3e50901a1db5d000008",
             src: "+300000000000",
-            dst: "+16133191044",
+            dst: "+16052914133",
             msg: "Test From Backend \nPlease contact me in skype.  Alexandr Roman. \n Чесно."
         };
 
