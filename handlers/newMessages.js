@@ -443,8 +443,8 @@ module.exports = function( app, db ) {
             text: msg
         };
 
-        /*sendFunc( sendParams, callback );*/ //TODO uncoment for external
-        callback( null );
+        sendFunc( sendParams, callback );
+        /*callback( null );*/
     };
 
     this.sendTEXTMessage = function( params, callback ) {

@@ -174,13 +174,15 @@ var Number = function (db) {
             default: {} break;
         }
 
-        /*TODO uncoment for use plivo , delete what after*/
-        /*buyFunc( buyParams, function( err ) {
+        buyFunc( buyParams, function( err ) {
             if ( err ) {
                 return next( err );
             }
 
-            number = '+' + number;
+            if ( !(/^\+/i).test(number) ) {
+                number = '+' + 'number';
+            }
+
             return users.addNumber(
                 {
                     userId: userId,
@@ -203,10 +205,10 @@ var Number = function (db) {
                         }
                     );
                 });
-        });*/
+        });
 
 
-        number = '+' + number;
+        /*number = '+' + number;
         users.addNumber(
             {
                 userId: userId,
@@ -233,7 +235,7 @@ var Number = function (db) {
                         left: left
                     }
                 );
-        });
+        });*/
     };
 
     function deleteExpiredNumbers( now, userModel, callback ){
@@ -272,7 +274,7 @@ var Number = function (db) {
                     return console.log( err.message );
                     //logWriter.log('Number ', err.message + '\n' + err.stack);
                 }
-                console.log('Numbers Unrented succefuly')
+                console.log('Numbers Unrented succefuly');
             })
         })
     };
