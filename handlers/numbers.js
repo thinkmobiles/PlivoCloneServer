@@ -180,7 +180,7 @@ var Number = function (db) {
             }
 
             if ( !(/^\+/i).test(number) ) {
-                number = '+' + 'number';
+                number = '+' + number;
             }
 
             return users.addNumber(
