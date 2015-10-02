@@ -38,7 +38,8 @@ module.exports = function() {
                 callback( null, response );
             } else {
                 err = new Error();
-                err.message = response.error || response.message;
+                err.message = /*response.error || response.message*/'Plivo send SMS Error';
+                console.log('Error:Plivo:SendSMS:status-', status, ':response-', response);
                 err.status = status;
                 callback( err );
             }
