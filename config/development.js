@@ -4,7 +4,7 @@
 
 var path = require('path');
 
-process.env.HOST = 'http://134.249.164.53:8830';
+process.env.HOST = 'http://projects.thinkmobiles.com:8830';
 process.env.PORT = '8830';
 //process.env.HOST = 'http://localhost:8830';
 process.env.PLIVO_APP_ID = 14672593026521222;
@@ -16,7 +16,7 @@ process.env.DB_HOST = '192.168.88.250';
 process.env.DB_NAME = "testCallNew";
 process.env.DB_PORT = 27017;
 
-process.env.REDIS_HOST = '134.249.164.53';
+process.env.REDIS_HOST = 'localhost';
 process.env.REDIS_PORT = 6379;
 
 /*Plivo credentials*/
