@@ -66,7 +66,7 @@ module.exports = function () {
                         break;
                     }
 
-                    price =+ parseFloat( response.messages[i]['message-price'] )
+                    price += parseFloat( response.messages[i]['message-price'] )
                 }
             }
 
