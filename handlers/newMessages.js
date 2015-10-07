@@ -470,7 +470,7 @@ module.exports = function( app, db ) {
                     self.getPostOptions( options, cb );
                 },
 
-                /* add data to conversation && save */
+                /* add data to conversation */
                 function( options, cb ) {
                     var conversation;
 
@@ -480,13 +480,14 @@ module.exports = function( app, db ) {
 
                     options.conversation = conversation;
 
-                    conversation.save( function( err ) {
+                    /*conversation.save( function( err ) {
                         if ( err ) {
                             return cb( err );
                         }
 
                         cb( null, options );
-                    });
+                    });*/
+                    cb(null, options);
                 },
 
                 /* send MSG */
@@ -527,6 +528,20 @@ module.exports = function( app, db ) {
                             cb( null, options );
                         })
                     }
+                },
+
+                /* Save conversation */
+
+                function (options, cb) {
+                    var conversation = options.conversation;
+
+                    conversation.save( function( err ) {
+                        if ( err ) {
+                            return cb( err );
+                        }
+
+                        cb( null, options );
+                    });
                 },
 
                 /* write OFF credits */
