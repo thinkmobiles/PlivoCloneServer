@@ -32,7 +32,8 @@ var Number = function (db) {
             page: req.query.p,
             limit: req.query.l
         };
-        var provider = 'PLIVO';
+
+        var provider = 'NEXMO';
         var resultObj;
 
         switch ( provider ) {
@@ -58,6 +59,7 @@ var Number = function (db) {
                         return next( err );
                     }
 
+                    delete result.count;
                     return res.status( 200).send( result );
                 })
             } break;
@@ -143,7 +145,7 @@ var Number = function (db) {
         var params = req.body;
         var packageName = params.packageName;
         var countryIso = params.countryIso || 'US';
-        var provider = params.provider || 'PLIVO'; //TODO remove constant -> add validation
+        var provider = params.provider || 'NEXMO'; //TODO remove constant -> add validation
         var number = params.number;
         var users = new UserHandler(db);
         var userId = req.session.uId;
@@ -207,35 +209,6 @@ var Number = function (db) {
                 });
         });
 
-
-        /*number = '+' + number;
-        users.addNumber(
-            {
-                userId: userId,
-                number: number,
-                countryIso: countryIso,
-                packageName: packageName,
-                provider: provider
-
-            },
-            function(err, resultUser){
-                if (err && (err.code === 11000) ){
-                    err = new Error('Number '+ number +' is in use. Please select another');
-                    return next(err);
-                }
-
-                if (err ){
-                    return next(err);
-                }
-                var left = lodash.findWhere(resultUser.numbers, {number: number})['left'];
-                res.status(200).send(
-                    {
-                        number: number,
-                        credits: resultUser.credits,
-                        left: left
-                    }
-                );
-        });*/
     };
 
     function deleteExpiredNumbers( now, userModel, callback ){

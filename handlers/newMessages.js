@@ -212,7 +212,7 @@ module.exports = function( app, db ) {
                 }
 
                 if ( ! results.length || ! results[0] ) {
-                    err = new Error('Bad request');
+                    err = new Error('you are not owner of the number: ' + findSrcUser["numbers.number"]);
                     err.status = 400;
 
                     return callback( err );
