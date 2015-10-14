@@ -217,7 +217,7 @@ module.exports = function () {
                 '<form>' +
                     '<record name="recording" beep="true" dtmfterm="true" maxtime="100s">' +
                         '<filled>' +
-                            '<submit next=' + inCallXmlRoute + ' method="post" namelist="recording callerid" enctype="multipart/form-data"/>' +
+                            '<submit next="' + inCallXmlRoute + '" method="post" namelist="recording callerid" enctype="multipart/form-data"/>' +
                         '</filled>' +
                     '</record>' +
                 '</form>' +

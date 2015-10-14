@@ -17,7 +17,16 @@ var ObjectId = mongoose.Types.ObjectId;
 var EXTERNAL_USER_ID = '123456789';
 var PROVIDERS = require('../constants/providerTypes');
 
-var providerRegExp = new RegExp('^'+ _.values(PROVIDERS).join('$|^') + '$', 'i' );
+var providerRegExp  = new RegExp('^'+ _.values(PROVIDERS).join('$|^') + '$', 'i' );
+
+function toNormNumberForm(number) {
+
+    if ( typeof number !== 'string') {
+        return '';
+    }
+
+    return number.replace(/[^\d]/g, '').replace(/(^\d)/, '+$1');
+}
 
 module.exports = function( app, db ) {
     /*DataBase models*/
@@ -599,6 +608,159 @@ module.exports = function( app, db ) {
             res.status( 200 ).send( result );
         })
 
+    };
+
+    this.getNexmoInboundSMS = function( req, res, next ) {
+        var messageType = req.body.type;
+        var message     = req.body.text;
+        var src         = req.body.msisdn;
+        var dst         = req.body.to;
+
+        if ( messageType !== 'text' || messageType !== 'unicode' ) {
+            res.status(200).send();
+            return console.log('Error:Nexmo:InboundSMS: Bad message type - ' + messageType);
+        }
+
+        if ( !dst ) {
+            res.status(200).send();
+            return console.log('Error:Nexmo:InboundSMS: No dst number');
+        }
+
+        function eventEmit(eventName, data) {
+
+            switch (eventName) {
+                case 'inSmsMessage': {
+                    (function(data) {
+                        var src         = data.src;
+                        var dst         = data.dst;
+                        var msg         = data.message;
+                        var provider    = data.provider;
+
+                        async.waterfall(
+                            [
+                                /* find user */
+                                function( cb ) {
+                                    var options = {
+                                        src: src,
+                                        dst: dst,
+                                        msg: msg,
+                                        msgType: "TEXT" //TODO constant
+                                    };
+
+                                    var findDstUser = {
+                                        "numbers.number": dst
+                                    };
+
+                                    getUser( findDstUser, {}, function( err, dstUser ) {
+                                        if ( err ) {
+                                            return cb( err );
+                                        }
+
+                                        if (! dstUser ) {
+                                            err = badRequests.InvalidValue( { param: 'dst', value: dst } );
+                                            err = new Error('no user with ' + dst + ' number');
+                                            err.status = 400;
+                                            return cb( err );
+                                        }
+
+                                        options.dstUser = dstUser;
+
+                                        cb( null, options );
+                                    } )
+                                },
+
+                                /* create conversation */
+                                function ( params, cb ) {
+                                    var dstUserId = params.dstUser._id.toString();
+                                    var chat = self.calculateChatString( params.src, params.dst );
+                                    var pushEnabled = params.dstUser.enablepush;
+                                    var conversation = {
+                                        owner: {
+                                            _id: EXTERNAL_USER_ID,
+                                            number: params.src
+                                        },
+                                        companion: {
+                                            _id: dstUserId,
+                                            number: params.dst
+                                        },
+                                        body: params.msg,
+                                        type: params.msgType,
+                                        show: [ dstUserId ],
+                                        chat: chat
+                                    };
+
+                                    conversation = new Conversation( conversation );
+
+                                    params.dstUserId = dstUserId;
+                                    params.pushEnabled = pushEnabled;
+
+                                    conversation.save( function(err, result ) {
+                                        if (err) {
+                                            return cb( err );
+                                        }
+
+                                        params.conversation = result;
+
+                                        cb( null, params );
+
+                                    });
+
+                                },
+
+                                /* send push & socket*/
+                                function( params, cb ) {
+                                    var dstUserId = params.dstUserId;
+                                    var src = params.src;
+                                    var dst = params.dst;
+                                    var pushEnabled = params.pushEnabled;
+                                    var conversation = params.conversation;
+
+                                    self.sendInternalMessage( params, function( err, result ) {
+                                        if ( err ) {
+                                            return cb( err );
+                                        }
+
+                                        cb( null, params)
+                                    });
+                                }
+                            ],
+                            function( err, result ) {
+                                if ( err ) {
+                                    return /*next( err );*/ console.log(err)
+                                }
+
+                                /*TODO remove*/
+                                if ( process.env.NODE_ENV === 'development' ) {
+                                    console.log(
+                                        '------------------------\n' +
+                                        provider + ' INBOUND MSG\n' +
+                                        'STATUS: SUCCESS'
+                                    );
+                                }
+                            }
+                        )
+                    })(data);
+
+                } break;
+
+                default: {
+                    console.log('No such event: ' + eventName);
+                } break;
+            }
+
+        }
+
+        src = toNormNumberForm(src);
+        dst = toNormNumberForm(dst);
+
+        eventEmit('inSmsMessage', {
+            provider: 'NEXMO',
+            dst     : dst,
+            src     : src,
+            message : message
+        });
+
+        res.status(200).send();
     };
 
     this.getPlivoInboundSMS = function( req, res, next ) {
