@@ -627,7 +627,7 @@ module.exports = function( app, db ) {
             )
         }
 
-        if ( messageType !== 'text' || messageType !== 'unicode' ) {
+        if ( messageType !== 'text' && messageType !== 'unicode' ) {
             res.status(200).send();
             return console.log('Error:Nexmo:InboundSMS: Bad message type - ' + messageType);
         }
