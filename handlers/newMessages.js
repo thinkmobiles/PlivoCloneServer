@@ -611,10 +611,11 @@ module.exports = function( app, db ) {
     };
 
     this.getNexmoInboundSMS = function( req, res, next ) {
-        var messageType = req.body.type;
-        var message     = req.body.text;
-        var src         = req.body.msisdn;
-        var dst         = req.body.to;
+        var data        = req.query;
+        var messageType = data.type;
+        var message     = data.text;
+        var src         = data.msisdn;
+        var dst         = data.to;
 
         if (process.env.NODE_ENV === 'development') {
             console.log(
