@@ -616,6 +616,16 @@ module.exports = function( app, db ) {
         var src         = req.body.msisdn;
         var dst         = req.body.to;
 
+        if (process.env.NODE_ENV === 'development') {
+            console.log(
+                'Incomming Nexmo SMS: \n',
+                'src: ', src, '\n',
+                'dst: ', dst, '\n',
+                'msg: ', message, '\n',
+                'type: ', messageType, '\n'
+            )
+        }
+
         if ( messageType !== 'text' || messageType !== 'unicode' ) {
             res.status(200).send();
             return console.log('Error:Nexmo:InboundSMS: Bad message type - ' + messageType);
