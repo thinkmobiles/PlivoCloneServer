@@ -28,7 +28,7 @@ module.exports = function(db, app) {
     router.delete( '/:id', session.authenticatedUser, messages.deleteOneMessage );
     router.delete( '/:n1/:n2', session.authenticatedUser, messages.deleteChat);
     router.post('/plivo', newMessages.getPlivoInboundSMS );
-    router.post('/nexmo', newMessages.getNexmoInboundSMS );
+    router.get('/nexmo', newMessages.getNexmoInboundSMS );
 
 
     return router;
