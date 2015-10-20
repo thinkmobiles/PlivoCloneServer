@@ -18,6 +18,23 @@ var NUMBER_TYPES = require('../constants/numberTypes');
 var NUMBER_FEATURES = require('../constants/numberFeatures');
 
 module.exports = function () {
+    function setVoiceCallback(options, callback) {
+        var country =               options.country;
+        var number  =               options.number;
+        var nexmoRecordVXMLRoute =  process.env.HOST + '/'
+
+        nexmo.updateNumber(
+            {
+                country:            country,
+                msisdn:             number,
+                /*moHttpUrl:          nexmoInSMSRoute,*/
+                voiceCallbackType:  'vxml',
+                voiceCallbackValue: nexmoRecordVXMLRoute
+            },
+            callback
+        );
+        var pattern = 'https://rest.nexmo.com/number/update/42d19e9b/36e5af51/GB/441143597299?voiceCallbackType=vxml&voiceCallbackValue=http%3A%2F%2Fprojects.thinkmobiles.com%3A8868%2Fcontrol%2Fnexmo%2Frecord'
+    }
 
     this.sendSmsMsg = function ( params, callback ) {
         /*params = {
@@ -103,7 +120,7 @@ module.exports = function () {
 
         var options = {
             country: country,
-            features: 'SMS,VOICE',
+            features: /*'SMS,VOICE'*/'SMS',
             "index": page,
             size: limit
         };
@@ -211,13 +228,13 @@ module.exports = function () {
 
     this.generateRecordXML = function (from, to) {
         var xmlString =
-            '<?xml version="1.0" encoding="UTF-8"?>' +
+            /*'<?xml version="1.0" encoding="UTF-8"?>' +*/
             '<vxml version = "2.1" >' +
-                '<var name="callerid" expr="TO_BE_SET_BY_THE_SCRIPT" />' +
+                /*'<var name="callerid" expr="TO_BE_SET_BY_THE_SCRIPT" />' +*/
                 '<form>' +
-                    '<record name="recording" beep="true" dtmfterm="true" maxtime="100s">' +
+                    '<record name="recording" beep="true" dtmfterm="true" finalsilence="3s" maxtime="100s">' +
                         '<filled>' +
-                            '<submit next="' + inCallXmlRoute + '" method="post" namelist="recording callerid" enctype="multipart/form-data"/>' +
+                            '<submit next="' + inCallXmlRoute + '" method="post" namelist="recording" enctype="multipart/form-data"/>' +
                         '</filled>' +
                     '</record>' +
                 '</form>' +
