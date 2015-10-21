@@ -447,8 +447,8 @@ module.exports = function( app, db ) {
         }
 
         sendParams = {
-            from: src,
-            to: dst,
+            from: src.replace(/[^0-9]/g, ''),
+            to: dst.replace(/[^0-9]/g, ''),
             text: msg
         };
 
