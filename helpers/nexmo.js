@@ -191,8 +191,8 @@ module.exports = function () {
     this.createCall = function ( params, callback ) {
         var srcUserId = params.srcUser._id;
         var fileUrl = params.fileUrl;
-        var src = params.src;
-        var dst = params.dst;
+        var src = params.src.replace(/[^0-9]/g, '');
+        var dst = params.dst.replace(/[^0-9]/g, '');
         var answerUrl = outCallXmlRoute + '?file=' + fileUrl + '&uId=' + srcUserId.toString();
 
         var options = {
@@ -205,11 +205,10 @@ module.exports = function () {
 
         nexmo.voiceCall( options, function ( err, result ) {
             if (err) {
-                return console.log( err );
+                return callback( err );
             }
 
-            console.log( result );
-            /*callback( null, result )*/
+            callback(null, result);
         })
     };
 
