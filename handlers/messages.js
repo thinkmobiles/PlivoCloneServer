@@ -734,11 +734,18 @@ var Message = function ( db, app ) {
         var messageIds = req.query.message || [ req.params.id ];
         var userId = req.session.uId;
 
+        if (typeof messageIds === 'string') {
+            try {
+                messageIds = JSON.parse(messageIds);
+            }catch(err) {
+                return next(err);
+            }
+        }
+
         messageIds = lodash.map( messageIds, function( value ) {
             return newObjectId( value );
         });
 
-        console.log( messageIds );
         Conversation.update(
             {
                 _id: { $in: messageIds }
