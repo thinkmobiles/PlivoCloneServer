@@ -147,6 +147,23 @@ var Push = function (db) {
         });
     };
 
+    this.removeDevices = function(deviceIds, callback) {
+        var criteria = {
+            deviceId: {
+                $in: deviceIds
+            }
+        };
+
+        PushModel.remove(
+            criteria,
+            function(err, result) {
+                if (callback && (typeof callback === 'function')) {
+                    callback(err, result);
+                }
+            }
+        );
+    };
+
     this.newChannel = function (req, res, next) {
         /* {
          channelURI:

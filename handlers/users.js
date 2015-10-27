@@ -13,9 +13,11 @@ var User = function ( db ) {
     var Price = db.model('countries');
     var crypto = require( 'crypto' );
     var SessionHandler = require( './sessions' );
+    var PushHandler = require('./push');
     var lodash = require('lodash');
     var async = require( 'async' );
     var session = new SessionHandler( db );
+    var push = new PushHandler( db );
     var newObjectId = mongoose.Types.ObjectId;
     var fileStor = new FileStorage();
     var self = this;
@@ -52,11 +54,7 @@ var User = function ( db ) {
         var shaSum = crypto.createHash( 'sha256' );
         var user;
 
-        //if (!password || !email || !mobile) {
         if (!password || !email) {
-            /*err = new Error('Not all parameters is set');
-            err.status = 400;
-            return next(err);*/
             return next(badRequests.NotEnParams({message: 'Not all parameters is set'}));
         }
 
@@ -82,6 +80,12 @@ var User = function ( db ) {
     };
 
     this.signOut = function ( req, res, next ) {
+        var deviceId = req.query.deviceId;
+
+        if (deviceId) {
+            push.removeDevices([deviceId])
+        }
+
         session.kill( req, res );
     };
 
